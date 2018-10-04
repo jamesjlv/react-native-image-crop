@@ -22,8 +22,8 @@
     "bugs": {
         "url": "https://github.com/jkmf/react-native-image-crop/issues"
     },
-    "peerDependencies": {
-        "@jkmf/react-native-clip-rect": "^1.0.0"
+    "dependencies": {
+        "@jkmf/react-native-clip-rect": "github:jkmf/react-native-clip-rect",
     },
     "repository": {
         "type": "git",
