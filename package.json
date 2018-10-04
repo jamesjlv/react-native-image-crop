@@ -23,7 +23,7 @@
         "url": "https://github.com/jkmf/react-native-image-crop/issues"
     },
     "dependencies": {
-        "@jkmf/react-native-clip-rect": "github:jkmf/react-native-clip-rect",
+        "@jkmf/react-native-clip-rect": "github:jkmf/react-native-clip-rect"
     },
     "repository": {
         "type": "git",
