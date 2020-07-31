@@ -1,4 +1,4 @@
-# React Native Image Crop (remobile)
+# React Native Image Crop
 A component for react-native crop image,  such as edit user head.
 
 ## Installation
