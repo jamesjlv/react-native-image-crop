@@ -3,7 +3,7 @@ A component for react-native crop image,  such as edit user head.
 
 ## Installation
 ```sh
-npm install @remobile/react-native-image-crop --save
+npm install @mtourj/react-native-image-crop --save
 ```
 
 ## Usage

@@ -1,32 +1,33 @@
 {
-    "name": "@mtourj/react-native-image-crop",
-    "version": "1.0.2",
-    "description": "A component for react-native crop image, such as edit user head",
-    "main": "index.js",
-    "author": {
-        "name": "Mohammad Tourjoman",
-        "email": "mtourjoman01@hotmail.com"
-    },
-    "license": "MIT",
-    "keywords": [
-        "react-native",
-        "react-component",
-        "ios",
-        "android",
-        "crop",
-        "image",
-        "jkmf",
-        "mobile"
-    ],
-    "homepage": "https://github.com/mtourj/react-native-image-crop",
-    "bugs": {
-        "url": "https://github.com/mtourj/react-native-image-crop/issues"
-    },
-    "dependencies": {
-        "@mtourj/react-native-clip-rect": "github:mtourj/react-native-clip-rect"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/mtourj/react-native-image-crop.git"
-    }
+  "name": "@mtourj/react-native-image-crop",
+  "version": "1.0.2",
+  "description": "A component for react-native crop image, such as edit user head",
+  "main": "index.js",
+  "author": "Mohammad Tourjoman <mtourjoman01@hotmail.com>",
+  "license": "MIT",
+  "keywords": [
+    "react-native",
+    "react-component",
+    "ios",
+    "android",
+    "crop",
+    "image",
+    "jkmf",
+    "mobile"
+  ],
+  "homepage": "https://github.com/mtourj/react-native-image-crop",
+  "bugs": {
+    "url": "https://github.com/mtourj/react-native-image-crop/issues"
+  },
+  "dependencies": {
+    "@mtourj/react-native-clip-rect": "github:mtourj/react-native-clip-rect"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mtourj/react-native-image-crop.git"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
 }
