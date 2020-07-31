@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { View, PanResponder, Animated, Image, StyleSheet } from 'react-native';
 
-import ClipRect from '@jkmf/react-native-clip-rect';
+import ClipRect from '@mtourj/react-native-clip-rect';
 
 export default class ImageCrop extends Component {
   static defaultProps = {
