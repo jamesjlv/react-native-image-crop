@@ -20,14 +20,17 @@
     "url": "https://github.com/mtourj/react-native-image-crop/issues"
   },
   "dependencies": {
-    "@mtourj/react-native-clip-rect": "^1.0.1",
+    "@mtourj/react-native-clip-rect": "^1.0.2",
     "@react-native-community/art": "^1.2.0"
   },
   "repository": {
     "type": "git",
     "url": "git://github.com/mtourj/react-native-image-crop.git"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/react": "^16.9.44",
+    "@types/react-native": "^0.63.2"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   }

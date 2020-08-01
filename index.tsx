@@ -1,15 +1,55 @@
 import React, { Component } from 'react';
-import { View, PanResponder, Animated, Image, StyleSheet } from 'react-native';
+import {
+  View,
+  PanResponder,
+  Animated,
+  Image,
+  StyleSheet,
+  PanResponderInstance,
+  ViewStyle,
+  ImageSourcePropType,
+} from 'react-native';
 
 import ClipRect from '@mtourj/react-native-clip-rect';
 
-export default class ImageCrop extends Component {
+interface IImageCropProps {
+  editRectWidth: number;
+  editRectHeight: number;
+  imageWidth: number;
+  imageHeight: number;
+  editRectRadius?: number;
+  source?: ImageSourcePropType;
+  style?: ViewStyle;
+  overlayColor?: string;
+}
+
+export default class ImageCrop extends Component<IImageCropProps> {
+  lastGestureDx: number;
+  translateX: number;
+  animatedTranslateX: Animated.Value;
+
+  lastGestureDy: number;
+  translateY: number;
+  animatedTranslateY: Animated.Value;
+
+  scale: number;
+  animatedScale: Animated.Value;
+  lastZoomDistance: number;
+  currentZoomDistance: number;
+
+  imageMinWidth: number;
+  imageMinHeight: number;
+  imageMinSize: number;
+
+  imagePanResponder: PanResponderInstance;
+
   static defaultProps = {
     editRectWidth: 212,
     editRectHeight: 212,
     editRectRadius: 106,
     overlayColor: 'rgba(0, 0, 0, 0.5)',
   };
+
   componentWillMount() {
     const {
       editRectWidth,
