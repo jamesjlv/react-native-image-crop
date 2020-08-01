@@ -20,7 +20,7 @@
     "url": "https://github.com/mtourj/react-native-image-crop/issues"
   },
   "dependencies": {
-    "@mtourj/react-native-clip-rect": "^1.0.3",
+    "@mtourj/react-native-clip-rect": "^1.1.0",
     "@react-native-community/art": "^1.2.0"
   },
   "repository": {
