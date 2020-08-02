@@ -64,7 +64,9 @@ export default class ImageCrop extends Component<IImageCropProps> {
     this.animatedTranslateX = new Animated.Value(0);
     this.animatedTranslateY = new Animated.Value(0);
     this.animatedScale = new Animated.Value(0);
+  }
 
+  componentDidMount() {
     this.imagePanResponder = PanResponder.create({
       onStartShouldSetPanResponder: (evt, gestureState) => true,
       onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
