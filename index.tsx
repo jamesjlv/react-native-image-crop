@@ -64,12 +64,8 @@ export default class ImageCrop extends Component<IImageCropProps> {
       imageHeight,
     } = this.props;
 
-    const {
-      currentZoomDistance,
-      scale,
-      translateX,
-      translateY,
-    } = this.props.zoomData;
+    const { currentZoomDistance, scale, translateX, translateY } =
+      this.props.zoomData || {};
 
     // 上次/当前/动画 x 位移
     this.lastGestureDx = null;
