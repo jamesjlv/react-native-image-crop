@@ -17,6 +17,7 @@ interface IImageCropProps {
   editRectHeight: number;
   imageWidth: number;
   imageHeight: number;
+  maxScale?: number;
   editRectRadius?: number;
   source?: ImageSourcePropType;
   style?: ViewStyle;
@@ -39,6 +40,7 @@ export default class ImageCrop extends Component<IImageCropProps> {
   animatedTranslateY: Animated.Value;
 
   scale: number;
+  maxScale: number;
   animatedScale: Animated.Value;
   lastZoomDistance: number;
   currentZoomDistance: number;
@@ -62,6 +64,7 @@ export default class ImageCrop extends Component<IImageCropProps> {
       editRectHeight,
       imageWidth,
       imageHeight,
+      maxScale
     } = this.props;
 
     const { currentZoomDistance, scale, translateX, translateY } =
@@ -79,6 +82,7 @@ export default class ImageCrop extends Component<IImageCropProps> {
 
     // 缩放大小
     this.scale = scale || 1;
+    this.maxScale = maxScale || 3;
     this.animatedScale = new Animated.Value(this.scale);
     this.lastZoomDistance = null;
     this.currentZoomDistance = currentZoomDistance || 0;
@@ -144,6 +148,8 @@ export default class ImageCrop extends Component<IImageCropProps> {
                 2;
             if (scale < 1) {
               scale = 1;
+            } else if (scale > this.maxScale) {
+              scale = this.maxScale;
             }
             this.animatedScale.setValue(scale);
             this.updateTranslate();
