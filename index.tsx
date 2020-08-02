@@ -21,6 +21,12 @@ interface IImageCropProps {
   source?: ImageSourcePropType;
   style?: ViewStyle;
   overlayColor?: string;
+  zoomData?: {
+    translateX: number;
+    translateY: number;
+    scale: number;
+    currentZoomDistance: number;
+  };
 }
 
 export default class ImageCrop extends Component<IImageCropProps> {
@@ -57,21 +63,29 @@ export default class ImageCrop extends Component<IImageCropProps> {
       imageWidth,
       imageHeight,
     } = this.props;
+
+    const {
+      currentZoomDistance,
+      scale,
+      translateX,
+      translateY,
+    } = this.props.zoomData;
+
     // 上次/当前/动画 x 位移
     this.lastGestureDx = null;
-    this.translateX = 0;
+    this.translateX = translateX || 0;
     this.animatedTranslateX = new Animated.Value(this.translateX);
 
     // 上次/当前/动画 y 位移
     this.lastGestureDy = null;
-    this.translateY = 0;
+    this.translateY = translateY || 0;
     this.animatedTranslateY = new Animated.Value(this.translateY);
 
     // 缩放大小
-    this.scale = 1;
+    this.scale = scale || 1;
     this.animatedScale = new Animated.Value(this.scale);
     this.lastZoomDistance = null;
-    this.currentZoomDistance = 0;
+    this.currentZoomDistance = currentZoomDistance || 0;
 
     // 图片大小
     if (imageWidth < imageHeight) {
@@ -182,6 +196,12 @@ export default class ImageCrop extends Component<IImageCropProps> {
     return {
       offset: { x: x * ratioX, y: y * ratioY },
       size: { width: width * ratioX, height: height * ratioY },
+      zoomData: {
+        translateX: this.translateX,
+        translateY: this.translateY,
+        scale: this.scale,
+        currentZoomDistance: this.currentZoomDistance,
+      },
     };
   }
   render() {
