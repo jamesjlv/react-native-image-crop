@@ -47,7 +47,7 @@ export default class ImageCrop extends Component<IImageCropProps> {
     editRectWidth: 212,
     editRectHeight: 212,
     editRectRadius: 106,
-    overlayColor: 'rgba(0, 0, 0, 0.5)',
+    overlayColor: 'rgba(0, 0, 0, 0.7)',
   };
 
   componentWillMount() {
@@ -106,11 +106,11 @@ export default class ImageCrop extends Component<IImageCropProps> {
           this.translateX +=
             this.lastGestureDx === null
               ? 0
-              : gestureState.dx - this.lastGestureDx;
+              : (gestureState.dx - this.lastGestureDx) / 2;
           this.translateY +=
             this.lastGestureDy === null
               ? 0
-              : gestureState.dy - this.lastGestureDy;
+              : (gestureState.dy - this.lastGestureDy) / 2;
           this.lastGestureDx = gestureState.dx;
           this.lastGestureDy = gestureState.dy;
           this.updateTranslate();
@@ -128,9 +128,10 @@ export default class ImageCrop extends Component<IImageCropProps> {
           if (this.lastZoomDistance !== null) {
             let scale =
               this.scale +
-              ((this.currentZoomDistance - this.lastZoomDistance) *
+              (((this.currentZoomDistance - this.lastZoomDistance) *
                 this.scale) /
-                this.imageMinSize;
+                this.imageMinSize) *
+                2;
             if (scale < 1) {
               scale = 1;
             }
@@ -185,6 +186,7 @@ export default class ImageCrop extends Component<IImageCropProps> {
   }
   render() {
     const animatedStyle = {
+      zIndex: -99,
       transform: [
         {
           scale: this.animatedScale,
@@ -210,10 +212,14 @@ export default class ImageCrop extends Component<IImageCropProps> {
         style={[styles.container, style]}
         {...this.imagePanResponder.panHandlers}
       >
-        <Animated.View style={animatedStyle}>
+        <Animated.View pointerEvents='none' style={animatedStyle}>
           <Image
             resizeMode='contain'
-            style={{ width: this.imageMinWidth, height: this.imageMinHeight }}
+            style={{
+              width: this.imageMinWidth,
+              height: this.imageMinHeight,
+              zIndex: -99,
+            }}
             source={source}
           />
         </Animated.View>
@@ -250,6 +256,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
     backgroundColor: 'black',
+    zIndex: -99,
   },
   editboxContainer: {
     position: 'absolute',
@@ -264,8 +271,8 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    borderColor: '#FFFFFF',
-    borderWidth: 2,
+    borderColor: '#AAAA',
+    borderWidth: 1,
   },
   editboxMiddle: {
     flexDirection: 'row',
