@@ -58,10 +58,6 @@ export default class ImageCrop extends Component<IImageCropProps> {
     overlayColor: 'rgba(0, 0, 0, 0.7)',
   };
 
-  componentWillUpdate() {
-    this.calibrate();
-  }
-
   calibrate() {
     const { currentZoomDistance, scale, translateX, translateY } =
       this.props.zoomData || {};
@@ -169,9 +165,6 @@ export default class ImageCrop extends Component<IImageCropProps> {
     });
   }
 
-  componentWillMount() {
-    this.calibrate();
-  }
   updateTranslate() {
     const { editRectWidth, editRectHeight } = this.props;
     const xOffest = (this.imageMinWidth - editRectWidth / this.scale) / 2;
@@ -217,6 +210,9 @@ export default class ImageCrop extends Component<IImageCropProps> {
     };
   }
   render() {
+    // With every render, we make sure our measurements are up-to-date
+    this.calibrate();
+
     const animatedStyle = {
       zIndex: -99,
       transform: [
