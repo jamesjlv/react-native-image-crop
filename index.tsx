@@ -58,36 +58,21 @@ export default class ImageCrop extends Component<IImageCropProps> {
     overlayColor: 'rgba(0, 0, 0, 0.7)',
   };
 
-  componentWillMount() {
+  componentDidUpdate() {
+    this.calibrate();
+  }
+
+  calibrate() {
     const {
       editRectWidth,
       editRectHeight,
       imageWidth,
       imageHeight,
-      maxScale
+      maxScale,
     } = this.props;
 
-    const { currentZoomDistance, scale, translateX, translateY } =
-      this.props.zoomData || {};
-
-    // 上次/当前/动画 x 位移
-    this.lastGestureDx = null;
-    this.translateX = translateX || 0;
-    this.animatedTranslateX = new Animated.Value(this.translateX);
-
-    // 上次/当前/动画 y 位移
-    this.lastGestureDy = null;
-    this.translateY = translateY || 0;
-    this.animatedTranslateY = new Animated.Value(this.translateY);
-
-    // 缩放大小
-    this.scale = scale || 1;
     this.maxScale = maxScale || 3;
-    this.animatedScale = new Animated.Value(this.scale);
-    this.lastZoomDistance = null;
-    this.currentZoomDistance = currentZoomDistance || 0;
 
-    // 图片大小
     if (imageWidth < imageHeight) {
       this.imageMinWidth = editRectWidth;
       this.imageMinHeight = (imageHeight / imageWidth) * editRectHeight;
@@ -161,6 +146,30 @@ export default class ImageCrop extends Component<IImageCropProps> {
       onPanResponderRelease: (evt, gestureState) => {},
       onPanResponderTerminate: (evt, gestureState) => {},
     });
+  }
+
+  componentWillMount() {
+    const { currentZoomDistance, scale, translateX, translateY } =
+      this.props.zoomData || {};
+
+    // 上次/当前/动画 x 位移
+    this.lastGestureDx = null;
+    this.translateX = translateX || 0;
+    this.animatedTranslateX = new Animated.Value(this.translateX);
+
+    // 上次/当前/动画 y 位移
+    this.lastGestureDy = null;
+    this.translateY = translateY || 0;
+    this.animatedTranslateY = new Animated.Value(this.translateY);
+
+    // 缩放大小
+    this.scale = scale || 1;
+    this.animatedScale = new Animated.Value(this.scale);
+    this.lastZoomDistance = null;
+    this.currentZoomDistance = currentZoomDistance || 0;
+
+    // 图片大小
+    this.calibrate();
   }
   updateTranslate() {
     const { editRectWidth, editRectHeight } = this.props;
