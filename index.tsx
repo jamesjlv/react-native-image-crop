@@ -63,6 +63,27 @@ export default class ImageCrop extends Component<IImageCropProps> {
   }
 
   calibrate() {
+    const { currentZoomDistance, scale, translateX, translateY } =
+      this.props.zoomData || {};
+
+    // 上次/当前/动画 x 位移
+    this.lastGestureDx = null;
+    this.translateX = translateX || 0;
+    this.animatedTranslateX = new Animated.Value(this.translateX);
+
+    // 上次/当前/动画 y 位移
+    this.lastGestureDy = null;
+    this.translateY = translateY || 0;
+    this.animatedTranslateY = new Animated.Value(this.translateY);
+
+    // 缩放大小
+    this.scale = scale || 1;
+    this.animatedScale = new Animated.Value(this.scale);
+    this.lastZoomDistance = null;
+    this.currentZoomDistance = currentZoomDistance || 0;
+
+    // 图片大小
+
     const {
       editRectWidth,
       editRectHeight,
@@ -149,26 +170,6 @@ export default class ImageCrop extends Component<IImageCropProps> {
   }
 
   componentWillMount() {
-    const { currentZoomDistance, scale, translateX, translateY } =
-      this.props.zoomData || {};
-
-    // 上次/当前/动画 x 位移
-    this.lastGestureDx = null;
-    this.translateX = translateX || 0;
-    this.animatedTranslateX = new Animated.Value(this.translateX);
-
-    // 上次/当前/动画 y 位移
-    this.lastGestureDy = null;
-    this.translateY = translateY || 0;
-    this.animatedTranslateY = new Animated.Value(this.translateY);
-
-    // 缩放大小
-    this.scale = scale || 1;
-    this.animatedScale = new Animated.Value(this.scale);
-    this.lastZoomDistance = null;
-    this.currentZoomDistance = currentZoomDistance || 0;
-
-    // 图片大小
     this.calibrate();
   }
   updateTranslate() {
