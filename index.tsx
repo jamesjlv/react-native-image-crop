@@ -58,7 +58,7 @@ export default class ImageCrop extends Component<IImageCropProps> {
     overlayColor: 'rgba(0, 0, 0, 0.7)',
   };
 
-  componentDidUpdate() {
+  componentwillUpdate() {
     this.calibrate();
   }
 
