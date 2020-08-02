@@ -58,51 +58,12 @@ export default class ImageCrop extends Component<IImageCropProps> {
     overlayColor: 'rgba(0, 0, 0, 0.7)',
   };
 
-  calibrate() {
-    const { currentZoomDistance, scale, translateX, translateY } =
-      this.props.zoomData || {};
+  constructor(props) {
+    super(props);
 
-    // 上次/当前/动画 x 位移
-    this.lastGestureDx = null;
-    this.translateX = translateX || 0;
-    this.animatedTranslateX = new Animated.Value(this.translateX);
-
-    // 上次/当前/动画 y 位移
-    this.lastGestureDy = null;
-    this.translateY = translateY || 0;
-    this.animatedTranslateY = new Animated.Value(this.translateY);
-
-    // 缩放大小
-    this.scale = scale || 1;
-    this.animatedScale = new Animated.Value(this.scale);
-    this.lastZoomDistance = null;
-    this.currentZoomDistance = currentZoomDistance || 0;
-
-    // 图片大小
-
-    const {
-      editRectWidth,
-      editRectHeight,
-      imageWidth,
-      imageHeight,
-      maxScale,
-    } = this.props;
-
-    this.maxScale = maxScale || 3;
-
-    if (imageWidth < imageHeight) {
-      this.imageMinWidth = editRectWidth;
-      this.imageMinHeight = (imageHeight / imageWidth) * editRectHeight;
-    } else {
-      this.imageMinWidth = (imageWidth / imageHeight) * editRectWidth;
-      this.imageMinHeight = editRectHeight;
-    }
-    this.imageMinSize = Math.floor(
-      Math.sqrt(
-        this.imageMinWidth * this.imageMinWidth +
-          this.imageMinHeight * this.imageMinHeight
-      )
-    );
+    this.animatedTranslateX = new Animated.Value(0);
+    this.animatedTranslateY = new Animated.Value(0);
+    this.animatedScale = new Animated.Value(0);
 
     this.imagePanResponder = PanResponder.create({
       onStartShouldSetPanResponder: (evt, gestureState) => true,
@@ -163,6 +124,53 @@ export default class ImageCrop extends Component<IImageCropProps> {
       onPanResponderRelease: (evt, gestureState) => {},
       onPanResponderTerminate: (evt, gestureState) => {},
     });
+  }
+
+  calibrate() {
+    const { currentZoomDistance, scale, translateX, translateY } =
+      this.props.zoomData || {};
+
+    // Last/current/animation x displacement
+    this.lastGestureDx = null;
+    this.translateX = translateX || 0;
+    this.animatedTranslateX.setValue(translateX);
+
+    // Last/current/animation y displacement
+    this.lastGestureDy = null;
+    this.translateY = translateY || 0;
+    this.animatedTranslateY.setValue(translateY);
+
+    // Zoom size
+    this.scale = scale || 1;
+    this.animatedScale.setValue(0);
+    this.lastZoomDistance = null;
+    this.currentZoomDistance = currentZoomDistance || 0;
+
+    // Image size
+
+    const {
+      editRectWidth,
+      editRectHeight,
+      imageWidth,
+      imageHeight,
+      maxScale,
+    } = this.props;
+
+    this.maxScale = maxScale || 3;
+
+    if (imageWidth < imageHeight) {
+      this.imageMinWidth = editRectWidth;
+      this.imageMinHeight = (imageHeight / imageWidth) * editRectHeight;
+    } else {
+      this.imageMinWidth = (imageWidth / imageHeight) * editRectWidth;
+      this.imageMinHeight = editRectHeight;
+    }
+    this.imageMinSize = Math.floor(
+      Math.sqrt(
+        this.imageMinWidth * this.imageMinWidth +
+          this.imageMinHeight * this.imageMinHeight
+      )
+    );
   }
 
   updateTranslate() {
