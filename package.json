@@ -1,6 +1,6 @@
 {
   "name": "@mtourj/react-native-image-crop",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "A component for react-native crop image, such as edit user head",
   "main": "index.tsx",
   "author": "Mohammad Tourjoman <mtourjoman01@hotmail.com>",
