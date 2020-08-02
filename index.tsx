@@ -30,7 +30,15 @@ interface IImageCropProps {
   };
 }
 
-export default class ImageCrop extends Component<IImageCropProps> {
+interface IImageCropState {
+  imageMinHeight?: number;
+  imageMinWidth?: number;
+}
+
+export default class ImageCrop extends Component<
+  IImageCropProps,
+  IImageCropState
+> {
   lastGestureDx: number;
   translateX: number;
   animatedTranslateX: Animated.Value;
@@ -60,6 +68,11 @@ export default class ImageCrop extends Component<IImageCropProps> {
 
   constructor(props) {
     super(props);
+
+    this.state = {
+      imageMinWidth: 0,
+      imageMinHeight: 0,
+    };
 
     this.animatedTranslateX = new Animated.Value(0);
     this.animatedTranslateY = new Animated.Value(0);
@@ -149,16 +162,16 @@ export default class ImageCrop extends Component<IImageCropProps> {
     this.currentZoomDistance = currentZoomDistance || 0;
 
     // Image size
+    this.maxScale = this.props.maxScale || 3;
+  }
 
+  calibrateImageSize() {
     const {
       editRectWidth,
       editRectHeight,
       imageWidth,
       imageHeight,
-      maxScale,
     } = this.props;
-
-    this.maxScale = maxScale || 3;
 
     if (imageWidth < imageHeight) {
       this.imageMinWidth = editRectWidth;
@@ -173,6 +186,11 @@ export default class ImageCrop extends Component<IImageCropProps> {
           this.imageMinHeight * this.imageMinHeight
       )
     );
+
+    return {
+      imageMinWidth: this.imageMinWidth,
+      imageMinHeight: this.imageMinHeight,
+    };
   }
 
   updateTranslate() {
@@ -220,9 +238,6 @@ export default class ImageCrop extends Component<IImageCropProps> {
     };
   }
   render() {
-    // With every render, we make sure our measurements are up-to-date
-    this.calibrate();
-
     const animatedStyle = {
       zIndex: -99,
       transform: [
@@ -241,8 +256,8 @@ export default class ImageCrop extends Component<IImageCropProps> {
       editRectWidth,
       editRectHeight,
       editRectRadius,
-      source,
       style,
+      source,
       overlayColor,
     } = this.props;
     return (
@@ -252,11 +267,16 @@ export default class ImageCrop extends Component<IImageCropProps> {
       >
         <Animated.View pointerEvents='none' style={animatedStyle}>
           <Image
-            resizeMode='contain'
+            resizeMode='cover'
             style={{
-              width: this.imageMinWidth,
-              height: this.imageMinHeight,
+              width: this.state.imageMinWidth || 1,
+              height: this.state.imageMinHeight || 1,
               zIndex: -99,
+            }}
+            onLoadEnd={() => {
+              // Once the new image has loaded, we calibrate our measurements
+              this.setState(this.calibrateImageSize());
+              this.calibrate();
             }}
             source={source}
           />
