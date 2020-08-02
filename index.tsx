@@ -66,7 +66,7 @@ export default class ImageCrop extends Component<IImageCropProps> {
     this.animatedScale = new Animated.Value(0);
 
     this.calibrate();
-    
+
     this.imagePanResponder = PanResponder.create({
       onStartShouldSetPanResponder: (evt, gestureState) => true,
       onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
@@ -144,7 +144,7 @@ export default class ImageCrop extends Component<IImageCropProps> {
 
     // Zoom size
     this.scale = scale || 1;
-    this.animatedScale.setValue(0);
+    this.animatedScale.setValue(scale);
     this.lastZoomDistance = null;
     this.currentZoomDistance = currentZoomDistance || 0;
 
