@@ -1,6 +1,7 @@
 # React Native Image Crop
 A component for react-native crop image,  such as edit user head.
-This fork introduces fixes and improvements not limited to:
+This fork introduces fixes, additions and improvements not limited to:
+ - Allows you to save crop state so you can remount the component without losing zoom state (zoomData prop)
  - Converted to TypeScript - Type defintions for autocomplete and easier development
  - Better finger to image position mapping (closer ratio)
  - Better state management - Allows for on the fly state/prop changes without any performance hitches
