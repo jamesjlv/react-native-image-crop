@@ -1,5 +1,11 @@
 # React Native Image Crop
 A component for react-native crop image,  such as edit user head.
+This fork introduces fixes and improvements not limited to:
+ - Converted to TypeScript - Type defintions for autocomplete and easier development
+ - Better finger to image position mapping (closer ratio)
+ - Better state management - Allows for on the fly state/prop changes without any performance hitches
+ - Remove deprecated dependencies and use new art
+ - and more...
 
 ## Installation
 ```sh
