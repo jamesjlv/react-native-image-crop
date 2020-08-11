@@ -7,6 +7,8 @@ This fork introduces fixes, additions and improvements not limited to:
  - Better state management - Allows for on the fly state/prop changes without any performance hitches
  - Remove deprecated dependencies and use new art
  - and more...
+ 
+Note: This README is outdated and does not represent this version of `react-native-image-crop`, will be updated in the near future.
 
 ## Installation
 ```sh
