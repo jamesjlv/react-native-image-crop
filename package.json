@@ -1,8 +1,8 @@
 {
   "name": "@mtourj/react-native-image-crop",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "A component for react-native crop image, such as edit user head",
-  "main": "index.tsx",
+  "main": "build/index.js",
   "author": "Mohammad Tourjoman <mtourjoman01@hotmail.com>",
   "license": "MIT",
   "keywords": [
@@ -20,17 +20,17 @@
     "url": "https://github.com/mtourj/react-native-image-crop/issues"
   },
   "dependencies": {
-    "@mtourj/react-native-clip-rect": "^1.2.1"
+    "@mtourj/react-native-clip-rect": "^1.2.2"
   },
   "repository": {
     "type": "git",
     "url": "git://github.com/mtourj/react-native-image-crop.git"
   },
   "devDependencies": {
-    "@types/react": "^16.9.44",
-    "@types/react-native": "^0.63.2"
+    "@types/react": "^17.0.41",
+    "@types/react-native": "^0.67.3"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "build.sh"
   }
 }

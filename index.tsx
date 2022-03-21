@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component } from "react";
 import {
   View,
   PanResponder,
@@ -8,9 +8,9 @@ import {
   PanResponderInstance,
   ViewStyle,
   ImageSourcePropType,
-} from 'react-native';
+} from "react-native";
 
-import ClipRect from '@mtourj/react-native-clip-rect';
+import ClipRect from "@mtourj/react-native-clip-rect";
 
 interface IImageCropProps {
   editRectWidth: number;
@@ -39,18 +39,18 @@ export default class ImageCrop extends Component<
   IImageCropProps,
   IImageCropState
 > {
-  lastGestureDx: number;
+  lastGestureDx: number | null;
   translateX: number;
   animatedTranslateX: Animated.Value;
 
-  lastGestureDy: number;
+  lastGestureDy: number | null;
   translateY: number;
   animatedTranslateY: Animated.Value;
 
   scale: number;
   maxScale: number;
   animatedScale: Animated.Value;
-  lastZoomDistance: number;
+  lastZoomDistance: number | null;
   currentZoomDistance: number;
 
   imageMinWidth: number;
@@ -63,11 +63,26 @@ export default class ImageCrop extends Component<
     editRectWidth: 212,
     editRectHeight: 212,
     editRectRadius: 106,
-    overlayColor: 'rgba(0, 0, 0, 0.7)',
+    overlayColor: "rgba(0, 0, 0, 0.7)",
   };
 
-  constructor(props) {
+  constructor(props: IImageCropProps) {
     super(props);
+
+    this.lastGestureDx = null;
+    this.lastGestureDy = null;
+    this.lastZoomDistance = null;
+
+    this.translateX = 0;
+    this.translateY = 0;
+    this.scale = 0;
+    this.maxScale = 3;
+
+    this.currentZoomDistance = 0;
+
+    this.imageMinHeight = 0;
+    this.imageMinWidth = 0;
+    this.imageMinSize = 0;
 
     this.state = {
       imageMinWidth: 0,
@@ -148,16 +163,16 @@ export default class ImageCrop extends Component<
     // Last/current/animation x displacement
     this.lastGestureDx = null;
     this.translateX = translateX || 0;
-    this.animatedTranslateX.setValue(translateX);
+    this.animatedTranslateX.setValue(translateX ?? 0);
 
     // Last/current/animation y displacement
     this.lastGestureDy = null;
     this.translateY = translateY || 0;
-    this.animatedTranslateY.setValue(translateY);
+    this.animatedTranslateY.setValue(translateY ?? 0);
 
     // Zoom size
     this.scale = scale || 1;
-    this.animatedScale.setValue(scale);
+    this.animatedScale.setValue(this.scale);
     this.lastZoomDistance = null;
     this.currentZoomDistance = currentZoomDistance || 0;
 
@@ -166,12 +181,8 @@ export default class ImageCrop extends Component<
   }
 
   calibrateImageSize() {
-    const {
-      editRectWidth,
-      editRectHeight,
-      imageWidth,
-      imageHeight,
-    } = this.props;
+    const { editRectWidth, editRectHeight, imageWidth, imageHeight } =
+      this.props;
 
     if (imageWidth < imageHeight) {
       this.imageMinWidth = editRectWidth;
@@ -214,12 +225,8 @@ export default class ImageCrop extends Component<
     this.animatedTranslateY.setValue(this.translateY);
   }
   getCropData() {
-    const {
-      editRectWidth,
-      editRectHeight,
-      imageWidth,
-      imageHeight,
-    } = this.props;
+    const { editRectWidth, editRectHeight, imageWidth, imageHeight } =
+      this.props;
     const ratioX = imageWidth / this.imageMinWidth;
     const ratioY = imageHeight / this.imageMinHeight;
     const width = editRectWidth / this.scale;
@@ -265,9 +272,9 @@ export default class ImageCrop extends Component<
         style={[styles.container, style]}
         {...this.imagePanResponder.panHandlers}
       >
-        <Animated.View pointerEvents='none' style={animatedStyle}>
+        <Animated.View pointerEvents="none" style={animatedStyle}>
           <Image
-            resizeMode='cover'
+            resizeMode="cover"
             style={{
               width: this.state.imageMinWidth || 1,
               height: this.state.imageMinHeight || 1,
@@ -278,7 +285,7 @@ export default class ImageCrop extends Component<
               this.setState(this.calibrateImageSize());
               this.calibrate();
             }}
-            source={source}
+            source={source ?? {}}
           />
         </Animated.View>
         <View style={styles.editboxContainer}>
@@ -310,29 +317,29 @@ export default class ImageCrop extends Component<
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-    backgroundColor: 'black',
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+    backgroundColor: "black",
     zIndex: -99,
   },
   editboxContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     right: 0,
     bottom: 0,
     left: 0,
   },
   clipRectBoder: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     right: 0,
     bottom: 0,
     left: 0,
-    borderColor: '#AAAA',
+    borderColor: "#AAAA",
     borderWidth: 1,
   },
   editboxMiddle: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
 });
