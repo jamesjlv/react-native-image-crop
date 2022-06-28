@@ -1,8 +1,15 @@
-import React, { forwardRef, useImperativeHandle } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Animated,
   Dimensions,
+  Easing,
   Image,
   ImageSourcePropType,
   PanResponder,
@@ -22,7 +29,7 @@ type CropHandleCornerPosition =
 type CropHandleEdgePosition = "left" | "top" | "right" | "bottom";
 
 export enum EditorDragMode {
-  // IMAGE = "image", // TODO: Implement
+  IMAGE = "image",
   SELECTION = "selection",
 }
 
@@ -37,7 +44,6 @@ interface IImageCropProps {
   maxScale?: number;
   /** Default is `selection` */
   dragMode?: EditorDragMode;
-  // TODO: Implement
   zoomData?: {
     offsetX: number;
     offsetY: number;
@@ -62,9 +68,28 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
   const imageHeightRef = useRef(_imageHeight);
   const imageDiagonal = useRef<number>(0);
 
+  // For for animating automated cropbox re-centers
+  const viewportOffset = useRef(new Animated.ValueXY({ x: 0, y: 0 }));
+
+  const isCropBoxMoving = useRef(false);
+
+  // const [activeCorners, setActiveCorners] = useState({
+  //   "top-left": false,
+  //   "top-right": false,
+  //   "bottom-left": false,
+  //   "bottom-right": false,
+  // });
+  const topEdgeActivityIndicatorScale = useRef(new Animated.Value(0));
+  const bottomEdgeActivityIndicatorScale = useRef(new Animated.Value(0));
+  const rightEdgeActivityIndicatorScale = useRef(new Animated.Value(0));
+  const leftEdgeActivityIndicatorScale = useRef(new Animated.Value(0));
+  const [isDragging, setIsDragging] = useState(false);
+
   const imageOffsetX = useRef<number>(0);
   const imageOffsetY = useRef<number>(0);
   const animatedImageOffset = useRef(new Animated.ValueXY({ x: 0, y: 0 }));
+
+  const animatedOverflowImageOpacity = useRef(new Animated.Value(0.4));
 
   const cropBoxPosition = useRef({
     top: 0,
@@ -99,6 +124,24 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
   useEffect(() => {
     imageHeightRef.current = _imageHeight;
   }, [_imageHeight]);
+
+  useEffect(() => {
+    if (isDragging) {
+      Animated.timing(animatedOverflowImageOpacity.current, {
+        toValue: 0.7,
+        useNativeDriver: true,
+        duration: 100,
+        easing: Easing.out(Easing.poly(4)),
+      }).start();
+    } else {
+      Animated.timing(animatedOverflowImageOpacity.current, {
+        toValue: 0.4,
+        useNativeDriver: true,
+        duration: 140,
+        easing: Easing.out(Easing.poly(4)),
+      }).start();
+    }
+  }, [isDragging]);
 
   useEffect(
     function calibrate() {
@@ -135,7 +178,7 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
   const imageDragAndPinchResponder = useMemo(() => {
     return PanResponder.create({
       onStartShouldSetPanResponder: () => {
-        return true;
+        return !isCropBoxMoving.current;
       },
       onPanResponderGrant: () => {
         lastZoomDistance.current = undefined;
@@ -176,7 +219,7 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
               resizeCropBox();
               break;
             }
-            // case EditorDragMode.IMAGE:
+            case EditorDragMode.IMAGE:
             default: {
               imageOffsetX.current +=
                 lastGestureDx.current === null
@@ -212,26 +255,28 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
             } else if (newScale > maxScale) {
               newScale = maxScale;
             }
+
             animatedScale.current.setValue(newScale);
             scale.current = newScale;
           }
           // Changing scale might cause us to go outside our translation constraints,
           // so we call translateImage() to make sure we stay within them
           lastZoomDistance.current = zoomDistance.current;
+
+          resizeCropBox();
         }
 
         lastGestureDx.current = gestureState.dx;
         lastGestureDy.current = gestureState.dy;
 
         translateImage();
-        // resizeCropBox();
       },
       onPanResponderEnd: () => {},
       onPanResponderTerminationRequest: (e, gestureState) => {
         return false;
       },
       onPanResponderTerminate: () => {
-        console.log("TERMINATED");
+        // console.log("TERMINATED");
       },
     });
   }, []);
@@ -240,11 +285,12 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
     if (!panResponders.current[position])
       panResponders.current[position] = PanResponder.create({
         onStartShouldSetPanResponder: () => {
-          return true;
+          return !isCropBoxMoving.current;
         },
         onPanResponderGrant: () => {
           lastGestureDx.current = 0;
           lastGestureDy.current = 0;
+          animateActiveEdgeStart(position);
         },
         onPanResponderMove: (event, gestureState) => {
           let shouldInvert = position === "right" || position === "bottom";
@@ -266,6 +312,14 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
 
           resizeCropBox();
         },
+        onPanResponderEnd: () => {
+          recenterCropBox();
+          animateActiveEdgeEnd(position);
+        },
+        onPanResponderTerminate: () => {
+          recenterCropBox();
+          animateActiveEdgeEnd(position);
+        },
       });
     return panResponders.current[position];
   };
@@ -276,7 +330,7 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
     if (!panResponders.current[position])
       panResponders.current[position] = PanResponder.create({
         onStartShouldSetPanResponder: () => {
-          return true;
+          return !isCropBoxMoving.current;
         },
         onPanResponderGrant: () => {
           lastGestureDx.current = 0;
@@ -308,20 +362,93 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
 
           resizeCropBox();
         },
+        onPanResponderEnd: () => {
+          recenterCropBox();
+        },
+        onPanResponderTerminate: () => {
+          recenterCropBox();
+        },
       });
 
     return panResponders.current[position];
   };
 
+  function recenterCropBox() {
+    if (props.dragMode !== EditorDragMode.IMAGE) return;
+
+    isCropBoxMoving.current = true;
+
+    const cropBoxWidth =
+      imageWidthRef.current -
+      cropBoxPosition.current.left -
+      cropBoxPosition.current.right;
+    const cropBoxHeight =
+      imageHeightRef.current -
+      cropBoxPosition.current.top -
+      cropBoxPosition.current.bottom;
+
+    const centeredPosition = {
+      left: (imageWidthRef.current - cropBoxWidth) / 2,
+      right: (imageWidthRef.current - cropBoxWidth) / 2,
+      top: (imageHeightRef.current - cropBoxHeight) / 2,
+      bottom: (imageHeightRef.current - cropBoxHeight) / 2,
+    };
+
+    const changeAmount = {
+      left: centeredPosition.left - cropBoxPosition.current.left,
+      right: centeredPosition.right - cropBoxPosition.current.right,
+      top: centeredPosition.top - cropBoxPosition.current.top,
+      bottom: centeredPosition.bottom - cropBoxPosition.current.bottom,
+    };
+
+    cropBoxPosition.current = centeredPosition;
+
+    animatedCropBoxPosition.current.bottom.setValue(centeredPosition.bottom);
+    animatedCropBoxPosition.current.top.setValue(centeredPosition.top);
+    animatedCropBoxPosition.current.left.setValue(centeredPosition.left);
+    animatedCropBoxPosition.current.right.setValue(centeredPosition.right);
+
+    imageOffsetX.current += changeAmount.left / scale.current;
+    imageOffsetY.current += changeAmount.top / scale.current;
+
+    // TODO: Include scale
+
+    animatedImageOffset.current.setValue({
+      x: imageOffsetX.current,
+      y: imageOffsetY.current,
+    });
+
+    viewportOffset.current.setValue({
+      x: -changeAmount.left,
+      y: -changeAmount.top,
+    });
+
+    // translateImage();
+    resizeCropBox();
+
+    Animated.timing(viewportOffset.current, {
+      toValue: { x: 0, y: 0 },
+      useNativeDriver: true,
+      duration: 500,
+      easing: Easing.out(Easing.poly(4)),
+    }).start(() => {
+      isCropBoxMoving.current = false;
+    });
+  }
+
   function translateImage() {
     const maxOffsetX =
-      (imageWidthRef.current - props.cropBoxWidth / scale.current) / 2;
+      (imageWidthRef.current - props.cropBoxWidth / scale.current) / 2 +
+      cropBoxPosition.current.left / scale.current;
     const minOffsetX =
-      -(imageWidthRef.current - props.cropBoxWidth / scale.current) / 2;
+      -(imageWidthRef.current - props.cropBoxWidth / scale.current) / 2 -
+      cropBoxPosition.current.right / scale.current;
     const maxOffsetY =
-      (imageHeightRef.current - props.cropBoxHeight / scale.current) / 2;
+      (imageHeightRef.current - props.cropBoxHeight / scale.current) / 2 +
+      cropBoxPosition.current.top / scale.current;
     const minOffsetY =
-      -(imageHeightRef.current - props.cropBoxHeight / scale.current) / 2;
+      -(imageHeightRef.current - props.cropBoxHeight / scale.current) / 2 -
+      cropBoxPosition.current.bottom / scale.current;
 
     if (imageOffsetX.current > maxOffsetX) {
       imageOffsetX.current = maxOffsetX;
@@ -396,10 +523,16 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
       }
 
       // Effect of offset
-      if (position === "top" || position === "bottom") {
+      if (position === "top") {
         minValue += imageOffsetY.current;
         maxValue += imageOffsetY.current;
-      } else if (position === "left" || position === "right") {
+      } else if (position === "bottom") {
+        maxValue -= imageOffsetY.current;
+        minValue -= imageOffsetY.current;
+      } else if (position === "left") {
+        minValue += imageOffsetX.current;
+        maxValue += imageOffsetX.current;
+      } else if (position === "right") {
         minValue -= imageOffsetX.current;
         maxValue -= imageOffsetX.current;
       }
@@ -440,11 +573,6 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
       // Store calculated minimum and maximum values for later use
       minValues[position] = minValue;
       maxValues[position] = maxValue;
-
-      // console.log("-----------------");
-      // console.log(position, minValue, maxValue);
-      // console.log(value);
-      // console.log("-----------------");
 
       // Clamp to constraints
       if (value < minValue) {
@@ -514,6 +642,26 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
     return Object.assign(calculatedPosition, overridePosition);
   }
 
+  function resizeCropBox() {
+    const newPosition = calculateCropBoxPosition();
+
+    for (let position of Object.keys(newPosition)) {
+      cropBoxPosition.current[
+        position as keyof typeof cropBoxPosition.current
+      ] = newPosition[position];
+      // Update position values
+      animatedCropBoxPosition.current[
+        position as keyof typeof animatedCropBoxPosition.current
+      ].setValue(newPosition[position]);
+    }
+
+    // Update offset value
+    cropBoxImageOffset.current.setValue({
+      x: -cropBoxPosition.current.left / scale.current,
+      y: -cropBoxPosition.current.top / scale.current,
+    });
+  }
+
   useImperativeHandle(ref, () => {
     function getCropData() {
       const {
@@ -547,26 +695,6 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
     };
   });
 
-  function resizeCropBox() {
-    const newPosition = calculateCropBoxPosition();
-
-    for (let position of Object.keys(newPosition)) {
-      cropBoxPosition.current[
-        position as keyof typeof cropBoxPosition.current
-      ] = newPosition[position];
-      // Update position values
-      animatedCropBoxPosition.current[
-        position as keyof typeof animatedCropBoxPosition.current
-      ].setValue(newPosition[position]);
-    }
-
-    // Update offset value
-    cropBoxImageOffset.current.setValue({
-      x: -cropBoxPosition.current.left / scale.current,
-      y: -cropBoxPosition.current.top / scale.current,
-    });
-  }
-
   function onWheel(e: React.WheelEvent<HTMLDivElement>) {
     const dy = e.deltaY / -1000;
 
@@ -581,6 +709,67 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
     translateImage();
     resizeCropBox();
   }
+
+  const animateActiveEdgeStart = (position: CropHandleEdgePosition) => {
+    let animatedValue;
+
+    switch (position) {
+      case "top": {
+        animatedValue = topEdgeActivityIndicatorScale;
+        break;
+      }
+      case "bottom": {
+        animatedValue = bottomEdgeActivityIndicatorScale;
+        break;
+      }
+      case "right": {
+        animatedValue = rightEdgeActivityIndicatorScale;
+        break;
+      }
+      default:
+      case "left": {
+        animatedValue = leftEdgeActivityIndicatorScale;
+        break;
+      }
+    }
+
+    Animated.timing(animatedValue.current, {
+      toValue: 1,
+      useNativeDriver: true,
+      duration: 60,
+    }).start();
+  };
+
+  const animateActiveEdgeEnd = (position: CropHandleEdgePosition) => {
+    let animatedValue;
+
+    switch (position) {
+      case "top": {
+        animatedValue = topEdgeActivityIndicatorScale;
+        break;
+      }
+      case "bottom": {
+        animatedValue = bottomEdgeActivityIndicatorScale;
+        break;
+      }
+      case "right": {
+        animatedValue = rightEdgeActivityIndicatorScale;
+        break;
+      }
+      default:
+      case "left": {
+        animatedValue = leftEdgeActivityIndicatorScale;
+        break;
+      }
+    }
+
+    Animated.timing(animatedValue.current, {
+      toValue: 0,
+      useNativeDriver: true,
+      duration: 80,
+      easing: Easing.in(Easing.poly(4)),
+    }).start();
+  };
 
   const imageContainerStyle = {
     zIndex: -99,
@@ -604,7 +793,7 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
     left: animatedCropBoxPosition.current.left,
   };
 
-  const ScrolWheelCaptureWrapper = (props: React.PropsWithChildren<{}>) => {
+  const ScrolWheelCaptureWrapper = (props: React.PropsWithChildren<any>) => {
     return Platform.OS === "web" ? (
       <div onWheel={onWheel}>{props.children}</div>
     ) : (
@@ -614,13 +803,29 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
 
   return (
     <ScrolWheelCaptureWrapper>
-      <View
-        style={[styles.container]}
+      <Animated.View
+        style={[
+          styles.container,
+          {
+            transform: [
+              {
+                translateX: viewportOffset.current.x,
+              },
+              {
+                translateY: viewportOffset.current.y,
+              },
+            ],
+          },
+        ]}
         {...imageDragAndPinchResponder.panHandlers}
       >
         {/* OVERFLOW IMAGE */}
         <Animated.View
-          style={[imageContainerStyle, styles.overflowImageContainer]}
+          style={[
+            imageContainerStyle,
+            styles.overflowImageContainer,
+            { opacity: animatedOverflowImageOpacity.current },
+          ]}
         >
           <Image
             style={{
@@ -682,14 +887,13 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
               resizeMode="contain"
               source={props.source}
               onLoad={(event) => {
-                console.log("IMAGE LOADED", event.nativeEvent.source);
+                // console.log("IMAGE LOADED", event.nativeEvent.source);
               }}
             />
           </Animated.View>
 
           {/* CROP BOX */}
           <Animated.View
-            pointerEvents={"box-none"}
             style={[
               styles.cropBox,
               cropBoxStyle,
@@ -697,66 +901,111 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
             ]}
           >
             {/* EDGE HANDLES */}
-            <Animated.View
-              style={styles.topEdgeHandle}
-              {...getEdgeCropHandlePanResponder("top").panHandlers}
-            >
+            <View style={[styles.topEdgeHandle]}>
               <Animated.View
+                style={[
+                  styles.topEdgeActivityIndicator,
+                  {
+                    transform: [
+                      {
+                        scaleY: topEdgeActivityIndicatorScale.current,
+                      },
+                    ],
+                  },
+                ]}
+              />
+              <View
                 style={styles.topEdgeOuterHandle}
                 {...getEdgeCropHandlePanResponder("top").panHandlers}
               />
-            </Animated.View>
-            <Animated.View
-              style={styles.bottomEdgeHandle}
-              {...getEdgeCropHandlePanResponder("bottom").panHandlers}
-            >
+            </View>
+            <View style={[styles.bottomEdgeHandle]}>
               <Animated.View
+                style={[
+                  styles.bottomEdgeActivityIndicator,
+                  {
+                    transform: [
+                      {
+                        scaleY: bottomEdgeActivityIndicatorScale.current,
+                      },
+                    ],
+                  },
+                ]}
+              />
+              <View
                 style={styles.bottomEdgeOuterHandle}
                 {...getEdgeCropHandlePanResponder("bottom").panHandlers}
               />
-            </Animated.View>
-            <Animated.View
-              style={styles.leftEdgeHandle}
-              {...getEdgeCropHandlePanResponder("left").panHandlers}
-            >
+            </View>
+            <View style={[styles.leftEdgeHandle]}>
               <Animated.View
+                style={[
+                  styles.leftEdgeActivityIndicator,
+                  {
+                    transform: [
+                      {
+                        scaleX: leftEdgeActivityIndicatorScale.current,
+                      },
+                    ],
+                  },
+                ]}
+              />
+              <View
                 style={styles.leftEdgeOuterHandle}
                 {...getEdgeCropHandlePanResponder("left").panHandlers}
               />
-            </Animated.View>
-            <Animated.View
-              style={styles.rightEdgeHandle}
-              {...getEdgeCropHandlePanResponder("right").panHandlers}
-            >
+            </View>
+            <View style={[styles.rightEdgeHandle]}>
               <Animated.View
+                style={[
+                  styles.rightEdgeActivityIndicator,
+                  {
+                    transform: [
+                      {
+                        scaleX: rightEdgeActivityIndicatorScale.current,
+                      },
+                    ],
+                  },
+                ]}
+              />
+              <View
                 style={styles.rightEdgeOuterHandle}
                 {...getEdgeCropHandlePanResponder("right").panHandlers}
               />
-            </Animated.View>
+            </View>
 
             {/* CORNER HANDLES */}
-            <Animated.View
-              {...getCornerCropHandlePanResponder("top-left").panHandlers}
-              style={styles.topLeftCornerHandle}
-            ></Animated.View>
-            <Animated.View
-              {...getCornerCropHandlePanResponder("top-right").panHandlers}
-              style={styles.topRightCornerHandle}
-            ></Animated.View>
-            <Animated.View
-              {...getCornerCropHandlePanResponder("bottom-left").panHandlers}
-              style={styles.bottomLeftCornerHandle}
-            ></Animated.View>
-            <Animated.View
-              {...getCornerCropHandlePanResponder("bottom-right").panHandlers}
-              style={styles.bottomRightCornerHandle}
-            ></Animated.View>
+            <View style={[styles.topLeftCornerHandle]}>
+              <View
+                style={styles.topLeftCornerOuterHandle}
+                {...getCornerCropHandlePanResponder("top-left").panHandlers}
+              />
+            </View>
+            <View style={[styles.topRightCornerHandle]}>
+              <View
+                style={styles.topRightCornerOuterHandle}
+                {...getCornerCropHandlePanResponder("top-right").panHandlers}
+              />
+            </View>
+            <View style={[styles.bottomLeftCornerHandle]}>
+              <View
+                style={styles.bottomLeftCornerOuterHandle}
+                {...getCornerCropHandlePanResponder("bottom-left").panHandlers}
+              />
+            </View>
+            <View style={[styles.bottomRightCornerHandle]}>
+              <View
+                style={styles.bottomRightCornerOuterHandle}
+                {...getCornerCropHandlePanResponder("bottom-right").panHandlers}
+              />
+            </View>
           </Animated.View>
         </View>
-      </View>
+      </Animated.View>
     </ScrolWheelCaptureWrapper>
   );
 });
+
 export default ImageCrop;
 
 const styles = StyleSheet.create({
@@ -804,11 +1053,23 @@ const styles = StyleSheet.create({
     top: -DEVICE_HEIGHT,
     bottom: -DEVICE_HEIGHT,
   },
+  activeEdgeHandleTop: {
+    borderTopWidth: 3,
+  },
+  activeEdgeHandleBottom: {
+    borderBottomWidth: 3,
+  },
+  activeEdgeHandleRight: {
+    borderRightWidth: 3,
+  },
+  activeEdgeHandleLeft: {
+    borderLeftWidth: 3,
+  },
   topEdgeHandle: {
     cursor: "ns-resize",
     position: "absolute",
-    left: 18,
-    right: 18,
+    left: 24,
+    right: 24,
     height: 20,
     borderTopColor: "#EEE",
     borderTopWidth: 1,
@@ -816,8 +1077,8 @@ const styles = StyleSheet.create({
   bottomEdgeHandle: {
     cursor: "ns-resize",
     position: "absolute",
-    left: 18,
-    right: 18,
+    left: 24,
+    right: 24,
     bottom: 0,
     height: 20,
     borderColor: "#EEE",
@@ -826,8 +1087,8 @@ const styles = StyleSheet.create({
   rightEdgeHandle: {
     cursor: "ew-resize",
     position: "absolute",
-    top: 18,
-    bottom: 18,
+    top: 24,
+    bottom: 24,
     right: 0,
     width: 20,
     borderColor: "#EEE",
@@ -836,95 +1097,163 @@ const styles = StyleSheet.create({
   leftEdgeHandle: {
     cursor: "ew-resize",
     position: "absolute",
-    top: 18,
-    bottom: 18,
+    top: 24,
+    bottom: 24,
     left: 0,
     width: 20,
     borderColor: "#EEE",
     borderLeftWidth: 1,
   },
+  topEdgeActivityIndicator: {
+    position: "absolute",
+    top: -2,
+    height: 5,
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFF",
+  },
+  bottomEdgeActivityIndicator: {
+    position: "absolute",
+    bottom: -2,
+    height: 5,
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFF",
+  },
+  leftEdgeActivityIndicator: {
+    position: "absolute",
+    left: -2,
+    width: 5,
+    top: 0,
+    bottom: 0,
+    backgroundColor: "#FFF",
+  },
+  rightEdgeActivityIndicator: {
+    position: "absolute",
+    right: -2,
+    width: 5,
+    top: 0,
+    bottom: 0,
+    backgroundColor: "#FFF",
+  },
   topLeftCornerHandle: {
-    zIndex: 3,
+    zIndex: 10,
     opacity: 0.7,
     cursor: "nwse-resize",
     position: "absolute",
     left: 0,
     top: 0,
-    width: 18,
-    height: 18,
+    width: 24,
+    height: 24,
     borderLeftWidth: 3,
     borderTopWidth: 3,
     borderColor: "#fff",
   },
   topRightCornerHandle: {
-    zIndex: 3,
+    zIndex: 10,
     cursor: "nesw-resize",
     opacity: 0.7,
     position: "absolute",
     top: 0,
     right: 0,
-    width: 18,
-    height: 18,
+    width: 24,
+    height: 24,
     borderRightWidth: 3,
     borderTopWidth: 3,
     borderColor: "#fff",
   },
   bottomLeftCornerHandle: {
-    zIndex: 3,
+    zIndex: 10,
     cursor: "nesw-resize",
     opacity: 0.7,
     position: "absolute",
     left: 0,
     bottom: 0,
-    width: 18,
-    height: 18,
+    width: 24,
+    height: 24,
     borderLeftWidth: 3,
     borderBottomWidth: 3,
     borderColor: "#fff",
   },
   bottomRightCornerHandle: {
-    zIndex: 3,
+    zIndex: 10,
     cursor: "nwse-resize",
     opacity: 0.7,
     position: "absolute",
     right: 0,
     bottom: 0,
-    width: 18,
-    height: 18,
+    width: 24,
+    height: 24,
     borderRightWidth: 3,
     borderBottomWidth: 3,
     borderColor: "#fff",
   },
+  topLeftCornerOuterHandle: {
+    zIndex: 10,
+    cursor: "nwse-resize",
+    position: "absolute",
+    left: -24,
+    top: -24,
+    width: 48,
+    height: 48,
+  },
+  topRightCornerOuterHandle: {
+    zIndex: 10,
+    cursor: "nesw-resize",
+    position: "absolute",
+    top: -24,
+    right: -24,
+    width: 48,
+    height: 48,
+  },
+  bottomLeftCornerOuterHandle: {
+    zIndex: 10,
+    cursor: "nesw-resize",
+    position: "absolute",
+    left: -24,
+    bottom: -24,
+    width: 48,
+    height: 48,
+  },
+  bottomRightCornerOuterHandle: {
+    zIndex: 10,
+    cursor: "nwse-resize",
+    position: "absolute",
+    right: -24,
+    bottom: -24,
+    width: 48,
+    height: 48,
+  },
   topEdgeOuterHandle: {
-    height: 10,
-    top: -10,
-    left: 15,
-    right: 15,
+    height: 40,
+    top: -20,
+    left: 0,
+    right: 0,
     position: "absolute",
     cursor: "ns-resize",
   },
   bottomEdgeOuterHandle: {
-    height: 10,
+    height: 40,
     position: "absolute",
-    bottom: -10,
-    left: 15,
-    right: 15,
+    bottom: -20,
+    left: 0,
+    right: 0,
     cursor: "ns-resize",
   },
   leftEdgeOuterHandle: {
-    width: 10,
+    width: 40,
     position: "absolute",
-    top: 15,
-    bottom: 15,
-    left: -10,
+    top: 0,
+    bottom: 0,
+    left: -20,
     cursor: "ew-resize",
   },
   rightEdgeOuterHandle: {
-    width: 10,
+    width: 40,
     position: "absolute",
-    top: 15,
-    bottom: 15,
-    right: -10,
+    top: 0,
+    bottom: 0,
+    right: -20,
     cursor: "ew-resize",
   },
 });

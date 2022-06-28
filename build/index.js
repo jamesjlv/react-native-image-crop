@@ -25,11 +25,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EditorDragMode = void 0;
 const react_1 = __importStar(require("react"));
-const react_2 = require("react");
 const react_native_1 = require("react-native");
 var EditorDragMode;
 (function (EditorDragMode) {
-    // IMAGE = "image", // TODO: Implement
+    EditorDragMode["IMAGE"] = "image";
     EditorDragMode["SELECTION"] = "selection";
 })(EditorDragMode = exports.EditorDragMode || (exports.EditorDragMode = {}));
 const DEFAULT_MAX_SCALE = 3;
@@ -39,42 +38,75 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
     var _a;
     const maxScale = (_a = props.maxScale) !== null && _a !== void 0 ? _a : DEFAULT_MAX_SCALE;
     /** Rendered width & height of image (at scale of 1) */
-    const [_imageWidth, setImageWidth] = (0, react_2.useState)(0);
-    const [_imageHeight, setImageHeight] = (0, react_2.useState)(0);
-    const imageWidthRef = (0, react_2.useRef)(_imageWidth);
-    const imageHeightRef = (0, react_2.useRef)(_imageHeight);
-    const imageDiagonal = (0, react_2.useRef)(0);
-    const imageOffsetX = (0, react_2.useRef)(0);
-    const imageOffsetY = (0, react_2.useRef)(0);
-    const animatedImageOffset = (0, react_2.useRef)(new react_native_1.Animated.ValueXY({ x: 0, y: 0 }));
-    const cropBoxPosition = (0, react_2.useRef)({
+    const [_imageWidth, setImageWidth] = (0, react_1.useState)(0);
+    const [_imageHeight, setImageHeight] = (0, react_1.useState)(0);
+    const imageWidthRef = (0, react_1.useRef)(_imageWidth);
+    const imageHeightRef = (0, react_1.useRef)(_imageHeight);
+    const imageDiagonal = (0, react_1.useRef)(0);
+    // For for animating automated cropbox re-centers
+    const viewportOffset = (0, react_1.useRef)(new react_native_1.Animated.ValueXY({ x: 0, y: 0 }));
+    const isCropBoxMoving = (0, react_1.useRef)(false);
+    // const [activeCorners, setActiveCorners] = useState({
+    //   "top-left": false,
+    //   "top-right": false,
+    //   "bottom-left": false,
+    //   "bottom-right": false,
+    // });
+    const topEdgeActivityIndicatorScale = (0, react_1.useRef)(new react_native_1.Animated.Value(0));
+    const bottomEdgeActivityIndicatorScale = (0, react_1.useRef)(new react_native_1.Animated.Value(0));
+    const rightEdgeActivityIndicatorScale = (0, react_1.useRef)(new react_native_1.Animated.Value(0));
+    const leftEdgeActivityIndicatorScale = (0, react_1.useRef)(new react_native_1.Animated.Value(0));
+    const [isDragging, setIsDragging] = (0, react_1.useState)(false);
+    const imageOffsetX = (0, react_1.useRef)(0);
+    const imageOffsetY = (0, react_1.useRef)(0);
+    const animatedImageOffset = (0, react_1.useRef)(new react_native_1.Animated.ValueXY({ x: 0, y: 0 }));
+    const animatedOverflowImageOpacity = (0, react_1.useRef)(new react_native_1.Animated.Value(0.4));
+    const cropBoxPosition = (0, react_1.useRef)({
         top: 0,
         bottom: 0,
         right: 0,
         left: 0,
     });
-    const animatedCropBoxPosition = (0, react_2.useRef)({
+    const animatedCropBoxPosition = (0, react_1.useRef)({
         top: new react_native_1.Animated.Value(0),
         bottom: new react_native_1.Animated.Value(0),
         right: new react_native_1.Animated.Value(0),
         left: new react_native_1.Animated.Value(0),
     });
-    const cropBoxImageOffset = (0, react_2.useRef)(new react_native_1.Animated.ValueXY({ x: 0, y: 0 }));
-    const scale = (0, react_2.useRef)(1);
-    const animatedScale = (0, react_2.useRef)(new react_native_1.Animated.Value(scale.current));
+    const cropBoxImageOffset = (0, react_1.useRef)(new react_native_1.Animated.ValueXY({ x: 0, y: 0 }));
+    const scale = (0, react_1.useRef)(1);
+    const animatedScale = (0, react_1.useRef)(new react_native_1.Animated.Value(scale.current));
     /** Gesture context */
-    const lastZoomDistance = (0, react_2.useRef)();
-    const zoomDistance = (0, react_2.useRef)();
-    const lastGestureDx = (0, react_2.useRef)(0);
-    const lastGestureDy = (0, react_2.useRef)(0);
-    const panResponders = (0, react_2.useRef)({});
-    (0, react_2.useEffect)(() => {
+    const lastZoomDistance = (0, react_1.useRef)();
+    const zoomDistance = (0, react_1.useRef)();
+    const lastGestureDx = (0, react_1.useRef)(0);
+    const lastGestureDy = (0, react_1.useRef)(0);
+    const panResponders = (0, react_1.useRef)({});
+    (0, react_1.useEffect)(() => {
         imageWidthRef.current = _imageWidth;
     }, [_imageWidth]);
-    (0, react_2.useEffect)(() => {
+    (0, react_1.useEffect)(() => {
         imageHeightRef.current = _imageHeight;
     }, [_imageHeight]);
-    (0, react_2.useEffect)(function calibrate() {
+    (0, react_1.useEffect)(() => {
+        if (isDragging) {
+            react_native_1.Animated.timing(animatedOverflowImageOpacity.current, {
+                toValue: 0.7,
+                useNativeDriver: true,
+                duration: 100,
+                easing: react_native_1.Easing.out(react_native_1.Easing.poly(4)),
+            }).start();
+        }
+        else {
+            react_native_1.Animated.timing(animatedOverflowImageOpacity.current, {
+                toValue: 0.4,
+                useNativeDriver: true,
+                duration: 140,
+                easing: react_native_1.Easing.out(react_native_1.Easing.poly(4)),
+            }).start();
+        }
+    }, [isDragging]);
+    (0, react_1.useEffect)(function calibrate() {
         // Calibrate internal dimensions based on provided dimensions
         if (props.imageWidth < props.imageHeight) {
             setImageWidth(props.cropBoxWidth);
@@ -93,10 +125,10 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         props.cropBoxHeight,
         props.cropBoxWidth,
     ]);
-    const imageDragAndPinchResponder = (0, react_2.useMemo)(() => {
+    const imageDragAndPinchResponder = (0, react_1.useMemo)(() => {
         return react_native_1.PanResponder.create({
             onStartShouldSetPanResponder: () => {
-                return true;
+                return !isCropBoxMoving.current;
             },
             onPanResponderGrant: () => {
                 lastZoomDistance.current = undefined;
@@ -129,7 +161,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                             resizeCropBox();
                             break;
                         }
-                        // case EditorDragMode.IMAGE:
+                        case EditorDragMode.IMAGE:
                         default: {
                             imageOffsetX.current +=
                                 lastGestureDx.current === null
@@ -165,18 +197,18 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                     // Changing scale might cause us to go outside our translation constraints,
                     // so we call translateImage() to make sure we stay within them
                     lastZoomDistance.current = zoomDistance.current;
+                    resizeCropBox();
                 }
                 lastGestureDx.current = gestureState.dx;
                 lastGestureDy.current = gestureState.dy;
                 translateImage();
-                // resizeCropBox();
             },
             onPanResponderEnd: () => { },
             onPanResponderTerminationRequest: (e, gestureState) => {
                 return false;
             },
             onPanResponderTerminate: () => {
-                console.log("TERMINATED");
+                // console.log("TERMINATED");
             },
         });
     }, []);
@@ -184,11 +216,12 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         if (!panResponders.current[position])
             panResponders.current[position] = react_native_1.PanResponder.create({
                 onStartShouldSetPanResponder: () => {
-                    return true;
+                    return !isCropBoxMoving.current;
                 },
                 onPanResponderGrant: () => {
                     lastGestureDx.current = 0;
                     lastGestureDy.current = 0;
+                    animateActiveEdgeStart(position);
                 },
                 onPanResponderMove: (event, gestureState) => {
                     let shouldInvert = position === "right" || position === "bottom";
@@ -205,6 +238,14 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                     lastGestureDy.current = gestureState.dy;
                     resizeCropBox();
                 },
+                onPanResponderEnd: () => {
+                    recenterCropBox();
+                    animateActiveEdgeEnd(position);
+                },
+                onPanResponderTerminate: () => {
+                    recenterCropBox();
+                    animateActiveEdgeEnd(position);
+                },
             });
         return panResponders.current[position];
     };
@@ -212,7 +253,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         if (!panResponders.current[position])
             panResponders.current[position] = react_native_1.PanResponder.create({
                 onStartShouldSetPanResponder: () => {
-                    return true;
+                    return !isCropBoxMoving.current;
                 },
                 onPanResponderGrant: () => {
                     lastGestureDx.current = 0;
@@ -241,14 +282,73 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                     lastGestureDy.current = gestureState.dy;
                     resizeCropBox();
                 },
+                onPanResponderEnd: () => {
+                    recenterCropBox();
+                },
+                onPanResponderTerminate: () => {
+                    recenterCropBox();
+                },
             });
         return panResponders.current[position];
     };
+    function recenterCropBox() {
+        if (props.dragMode !== EditorDragMode.IMAGE)
+            return;
+        isCropBoxMoving.current = true;
+        const cropBoxWidth = imageWidthRef.current -
+            cropBoxPosition.current.left -
+            cropBoxPosition.current.right;
+        const cropBoxHeight = imageHeightRef.current -
+            cropBoxPosition.current.top -
+            cropBoxPosition.current.bottom;
+        const centeredPosition = {
+            left: (imageWidthRef.current - cropBoxWidth) / 2,
+            right: (imageWidthRef.current - cropBoxWidth) / 2,
+            top: (imageHeightRef.current - cropBoxHeight) / 2,
+            bottom: (imageHeightRef.current - cropBoxHeight) / 2,
+        };
+        const changeAmount = {
+            left: centeredPosition.left - cropBoxPosition.current.left,
+            right: centeredPosition.right - cropBoxPosition.current.right,
+            top: centeredPosition.top - cropBoxPosition.current.top,
+            bottom: centeredPosition.bottom - cropBoxPosition.current.bottom,
+        };
+        cropBoxPosition.current = centeredPosition;
+        animatedCropBoxPosition.current.bottom.setValue(centeredPosition.bottom);
+        animatedCropBoxPosition.current.top.setValue(centeredPosition.top);
+        animatedCropBoxPosition.current.left.setValue(centeredPosition.left);
+        animatedCropBoxPosition.current.right.setValue(centeredPosition.right);
+        imageOffsetX.current += changeAmount.left / scale.current;
+        imageOffsetY.current += changeAmount.top / scale.current;
+        // TODO: Include scale
+        animatedImageOffset.current.setValue({
+            x: imageOffsetX.current,
+            y: imageOffsetY.current,
+        });
+        viewportOffset.current.setValue({
+            x: -changeAmount.left,
+            y: -changeAmount.top,
+        });
+        // translateImage();
+        resizeCropBox();
+        react_native_1.Animated.timing(viewportOffset.current, {
+            toValue: { x: 0, y: 0 },
+            useNativeDriver: true,
+            duration: 500,
+            easing: react_native_1.Easing.out(react_native_1.Easing.poly(4)),
+        }).start(() => {
+            isCropBoxMoving.current = false;
+        });
+    }
     function translateImage() {
-        const maxOffsetX = (imageWidthRef.current - props.cropBoxWidth / scale.current) / 2;
-        const minOffsetX = -(imageWidthRef.current - props.cropBoxWidth / scale.current) / 2;
-        const maxOffsetY = (imageHeightRef.current - props.cropBoxHeight / scale.current) / 2;
-        const minOffsetY = -(imageHeightRef.current - props.cropBoxHeight / scale.current) / 2;
+        const maxOffsetX = (imageWidthRef.current - props.cropBoxWidth / scale.current) / 2 +
+            cropBoxPosition.current.left / scale.current;
+        const minOffsetX = -(imageWidthRef.current - props.cropBoxWidth / scale.current) / 2 -
+            cropBoxPosition.current.right / scale.current;
+        const maxOffsetY = (imageHeightRef.current - props.cropBoxHeight / scale.current) / 2 +
+            cropBoxPosition.current.top / scale.current;
+        const minOffsetY = -(imageHeightRef.current - props.cropBoxHeight / scale.current) / 2 -
+            cropBoxPosition.current.bottom / scale.current;
         if (imageOffsetX.current > maxOffsetX) {
             imageOffsetX.current = maxOffsetX;
         }
@@ -315,11 +415,19 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                         MINIMUM_IMAGE_SIZE;
             }
             // Effect of offset
-            if (position === "top" || position === "bottom") {
+            if (position === "top") {
                 minValue += imageOffsetY.current;
                 maxValue += imageOffsetY.current;
             }
-            else if (position === "left" || position === "right") {
+            else if (position === "bottom") {
+                maxValue -= imageOffsetY.current;
+                minValue -= imageOffsetY.current;
+            }
+            else if (position === "left") {
+                minValue += imageOffsetX.current;
+                maxValue += imageOffsetX.current;
+            }
+            else if (position === "right") {
                 minValue -= imageOffsetX.current;
                 maxValue -= imageOffsetX.current;
             }
@@ -353,10 +461,6 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
             // Store calculated minimum and maximum values for later use
             minValues[position] = minValue;
             maxValues[position] = maxValue;
-            // console.log("-----------------");
-            // console.log(position, minValue, maxValue);
-            // console.log(value);
-            // console.log("-----------------");
             // Clamp to constraints
             if (value < minValue) {
                 value = minValue;
@@ -410,6 +514,19 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         }
         return Object.assign(calculatedPosition, overridePosition);
     }
+    function resizeCropBox() {
+        const newPosition = calculateCropBoxPosition();
+        for (let position of Object.keys(newPosition)) {
+            cropBoxPosition.current[position] = newPosition[position];
+            // Update position values
+            animatedCropBoxPosition.current[position].setValue(newPosition[position]);
+        }
+        // Update offset value
+        cropBoxImageOffset.current.setValue({
+            x: -cropBoxPosition.current.left / scale.current,
+            y: -cropBoxPosition.current.top / scale.current,
+        });
+    }
     (0, react_1.useImperativeHandle)(ref, () => {
         function getCropData() {
             const { cropBoxWidth, cropBoxHeight, imageWidth: _imageWidth, imageHeight: _imageHeight, } = props;
@@ -434,19 +551,6 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
             getCropData,
         };
     });
-    function resizeCropBox() {
-        const newPosition = calculateCropBoxPosition();
-        for (let position of Object.keys(newPosition)) {
-            cropBoxPosition.current[position] = newPosition[position];
-            // Update position values
-            animatedCropBoxPosition.current[position].setValue(newPosition[position]);
-        }
-        // Update offset value
-        cropBoxImageOffset.current.setValue({
-            x: -cropBoxPosition.current.left / scale.current,
-            y: -cropBoxPosition.current.top / scale.current,
-        });
-    }
     function onWheel(e) {
         const dy = e.deltaY / -1000;
         let newScale = scale.current + dy;
@@ -461,6 +565,61 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         translateImage();
         resizeCropBox();
     }
+    const animateActiveEdgeStart = (position) => {
+        let animatedValue;
+        switch (position) {
+            case "top": {
+                animatedValue = topEdgeActivityIndicatorScale;
+                break;
+            }
+            case "bottom": {
+                animatedValue = bottomEdgeActivityIndicatorScale;
+                break;
+            }
+            case "right": {
+                animatedValue = rightEdgeActivityIndicatorScale;
+                break;
+            }
+            default:
+            case "left": {
+                animatedValue = leftEdgeActivityIndicatorScale;
+                break;
+            }
+        }
+        react_native_1.Animated.timing(animatedValue.current, {
+            toValue: 1,
+            useNativeDriver: true,
+            duration: 60,
+        }).start();
+    };
+    const animateActiveEdgeEnd = (position) => {
+        let animatedValue;
+        switch (position) {
+            case "top": {
+                animatedValue = topEdgeActivityIndicatorScale;
+                break;
+            }
+            case "bottom": {
+                animatedValue = bottomEdgeActivityIndicatorScale;
+                break;
+            }
+            case "right": {
+                animatedValue = rightEdgeActivityIndicatorScale;
+                break;
+            }
+            default:
+            case "left": {
+                animatedValue = leftEdgeActivityIndicatorScale;
+                break;
+            }
+        }
+        react_native_1.Animated.timing(animatedValue.current, {
+            toValue: 0,
+            useNativeDriver: true,
+            duration: 80,
+            easing: react_native_1.Easing.in(react_native_1.Easing.poly(4)),
+        }).start();
+    };
     const imageContainerStyle = {
         zIndex: -99,
         transform: [
@@ -485,8 +644,24 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         return react_native_1.Platform.OS === "web" ? (react_1.default.createElement("div", { onWheel: onWheel }, props.children)) : (react_1.default.createElement(react_1.default.Fragment, null, props.children));
     };
     return (react_1.default.createElement(ScrolWheelCaptureWrapper, null,
-        react_1.default.createElement(react_native_1.View, Object.assign({ style: [styles.container] }, imageDragAndPinchResponder.panHandlers),
-            react_1.default.createElement(react_native_1.Animated.View, { style: [imageContainerStyle, styles.overflowImageContainer] },
+        react_1.default.createElement(react_native_1.Animated.View, Object.assign({ style: [
+                styles.container,
+                {
+                    transform: [
+                        {
+                            translateX: viewportOffset.current.x,
+                        },
+                        {
+                            translateY: viewportOffset.current.y,
+                        },
+                    ],
+                },
+            ] }, imageDragAndPinchResponder.panHandlers),
+            react_1.default.createElement(react_native_1.Animated.View, { style: [
+                    imageContainerStyle,
+                    styles.overflowImageContainer,
+                    { opacity: animatedOverflowImageOpacity.current },
+                ] },
                 react_1.default.createElement(react_native_1.Image, { style: {
                         width: _imageWidth,
                         height: _imageHeight,
@@ -525,25 +700,69 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                                 height: _imageHeight,
                             },
                         ], resizeMode: "contain", source: props.source, onLoad: (event) => {
-                            console.log("IMAGE LOADED", event.nativeEvent.source);
+                            // console.log("IMAGE LOADED", event.nativeEvent.source);
                         } })),
-                react_1.default.createElement(react_native_1.Animated.View, { pointerEvents: "box-none", style: [
+                react_1.default.createElement(react_native_1.Animated.View, { style: [
                         styles.cropBox,
                         cropBoxStyle,
                         { display: props.circular ? "none" : "flex" },
                     ] },
-                    react_1.default.createElement(react_native_1.Animated.View, Object.assign({ style: styles.topEdgeHandle }, getEdgeCropHandlePanResponder("top").panHandlers),
-                        react_1.default.createElement(react_native_1.Animated.View, Object.assign({ style: styles.topEdgeOuterHandle }, getEdgeCropHandlePanResponder("top").panHandlers))),
-                    react_1.default.createElement(react_native_1.Animated.View, Object.assign({ style: styles.bottomEdgeHandle }, getEdgeCropHandlePanResponder("bottom").panHandlers),
-                        react_1.default.createElement(react_native_1.Animated.View, Object.assign({ style: styles.bottomEdgeOuterHandle }, getEdgeCropHandlePanResponder("bottom").panHandlers))),
-                    react_1.default.createElement(react_native_1.Animated.View, Object.assign({ style: styles.leftEdgeHandle }, getEdgeCropHandlePanResponder("left").panHandlers),
-                        react_1.default.createElement(react_native_1.Animated.View, Object.assign({ style: styles.leftEdgeOuterHandle }, getEdgeCropHandlePanResponder("left").panHandlers))),
-                    react_1.default.createElement(react_native_1.Animated.View, Object.assign({ style: styles.rightEdgeHandle }, getEdgeCropHandlePanResponder("right").panHandlers),
-                        react_1.default.createElement(react_native_1.Animated.View, Object.assign({ style: styles.rightEdgeOuterHandle }, getEdgeCropHandlePanResponder("right").panHandlers))),
-                    react_1.default.createElement(react_native_1.Animated.View, Object.assign({}, getCornerCropHandlePanResponder("top-left").panHandlers, { style: styles.topLeftCornerHandle })),
-                    react_1.default.createElement(react_native_1.Animated.View, Object.assign({}, getCornerCropHandlePanResponder("top-right").panHandlers, { style: styles.topRightCornerHandle })),
-                    react_1.default.createElement(react_native_1.Animated.View, Object.assign({}, getCornerCropHandlePanResponder("bottom-left").panHandlers, { style: styles.bottomLeftCornerHandle })),
-                    react_1.default.createElement(react_native_1.Animated.View, Object.assign({}, getCornerCropHandlePanResponder("bottom-right").panHandlers, { style: styles.bottomRightCornerHandle })))))));
+                    react_1.default.createElement(react_native_1.View, { style: [styles.topEdgeHandle] },
+                        react_1.default.createElement(react_native_1.Animated.View, { style: [
+                                styles.topEdgeActivityIndicator,
+                                {
+                                    transform: [
+                                        {
+                                            scaleY: topEdgeActivityIndicatorScale.current,
+                                        },
+                                    ],
+                                },
+                            ] }),
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.topEdgeOuterHandle }, getEdgeCropHandlePanResponder("top").panHandlers))),
+                    react_1.default.createElement(react_native_1.View, { style: [styles.bottomEdgeHandle] },
+                        react_1.default.createElement(react_native_1.Animated.View, { style: [
+                                styles.bottomEdgeActivityIndicator,
+                                {
+                                    transform: [
+                                        {
+                                            scaleY: bottomEdgeActivityIndicatorScale.current,
+                                        },
+                                    ],
+                                },
+                            ] }),
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.bottomEdgeOuterHandle }, getEdgeCropHandlePanResponder("bottom").panHandlers))),
+                    react_1.default.createElement(react_native_1.View, { style: [styles.leftEdgeHandle] },
+                        react_1.default.createElement(react_native_1.Animated.View, { style: [
+                                styles.leftEdgeActivityIndicator,
+                                {
+                                    transform: [
+                                        {
+                                            scaleX: leftEdgeActivityIndicatorScale.current,
+                                        },
+                                    ],
+                                },
+                            ] }),
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.leftEdgeOuterHandle }, getEdgeCropHandlePanResponder("left").panHandlers))),
+                    react_1.default.createElement(react_native_1.View, { style: [styles.rightEdgeHandle] },
+                        react_1.default.createElement(react_native_1.Animated.View, { style: [
+                                styles.rightEdgeActivityIndicator,
+                                {
+                                    transform: [
+                                        {
+                                            scaleX: rightEdgeActivityIndicatorScale.current,
+                                        },
+                                    ],
+                                },
+                            ] }),
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.rightEdgeOuterHandle }, getEdgeCropHandlePanResponder("right").panHandlers))),
+                    react_1.default.createElement(react_native_1.View, { style: [styles.topLeftCornerHandle] },
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.topLeftCornerOuterHandle }, getCornerCropHandlePanResponder("top-left").panHandlers))),
+                    react_1.default.createElement(react_native_1.View, { style: [styles.topRightCornerHandle] },
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.topRightCornerOuterHandle }, getCornerCropHandlePanResponder("top-right").panHandlers))),
+                    react_1.default.createElement(react_native_1.View, { style: [styles.bottomLeftCornerHandle] },
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.bottomLeftCornerOuterHandle }, getCornerCropHandlePanResponder("bottom-left").panHandlers))),
+                    react_1.default.createElement(react_native_1.View, { style: [styles.bottomRightCornerHandle] },
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.bottomRightCornerOuterHandle }, getCornerCropHandlePanResponder("bottom-right").panHandlers))))))));
 });
 exports.default = ImageCrop;
 const styles = react_native_1.StyleSheet.create({
@@ -591,11 +810,23 @@ const styles = react_native_1.StyleSheet.create({
         top: -DEVICE_HEIGHT,
         bottom: -DEVICE_HEIGHT,
     },
+    activeEdgeHandleTop: {
+        borderTopWidth: 3,
+    },
+    activeEdgeHandleBottom: {
+        borderBottomWidth: 3,
+    },
+    activeEdgeHandleRight: {
+        borderRightWidth: 3,
+    },
+    activeEdgeHandleLeft: {
+        borderLeftWidth: 3,
+    },
     topEdgeHandle: {
         cursor: "ns-resize",
         position: "absolute",
-        left: 18,
-        right: 18,
+        left: 24,
+        right: 24,
         height: 20,
         borderTopColor: "#EEE",
         borderTopWidth: 1,
@@ -603,8 +834,8 @@ const styles = react_native_1.StyleSheet.create({
     bottomEdgeHandle: {
         cursor: "ns-resize",
         position: "absolute",
-        left: 18,
-        right: 18,
+        left: 24,
+        right: 24,
         bottom: 0,
         height: 20,
         borderColor: "#EEE",
@@ -613,8 +844,8 @@ const styles = react_native_1.StyleSheet.create({
     rightEdgeHandle: {
         cursor: "ew-resize",
         position: "absolute",
-        top: 18,
-        bottom: 18,
+        top: 24,
+        bottom: 24,
         right: 0,
         width: 20,
         borderColor: "#EEE",
@@ -623,95 +854,163 @@ const styles = react_native_1.StyleSheet.create({
     leftEdgeHandle: {
         cursor: "ew-resize",
         position: "absolute",
-        top: 18,
-        bottom: 18,
+        top: 24,
+        bottom: 24,
         left: 0,
         width: 20,
         borderColor: "#EEE",
         borderLeftWidth: 1,
     },
+    topEdgeActivityIndicator: {
+        position: "absolute",
+        top: -2,
+        height: 5,
+        left: 0,
+        right: 0,
+        backgroundColor: "#FFF",
+    },
+    bottomEdgeActivityIndicator: {
+        position: "absolute",
+        bottom: -2,
+        height: 5,
+        left: 0,
+        right: 0,
+        backgroundColor: "#FFF",
+    },
+    leftEdgeActivityIndicator: {
+        position: "absolute",
+        left: -2,
+        width: 5,
+        top: 0,
+        bottom: 0,
+        backgroundColor: "#FFF",
+    },
+    rightEdgeActivityIndicator: {
+        position: "absolute",
+        right: -2,
+        width: 5,
+        top: 0,
+        bottom: 0,
+        backgroundColor: "#FFF",
+    },
     topLeftCornerHandle: {
-        zIndex: 3,
+        zIndex: 10,
         opacity: 0.7,
         cursor: "nwse-resize",
         position: "absolute",
         left: 0,
         top: 0,
-        width: 18,
-        height: 18,
+        width: 24,
+        height: 24,
         borderLeftWidth: 3,
         borderTopWidth: 3,
         borderColor: "#fff",
     },
     topRightCornerHandle: {
-        zIndex: 3,
+        zIndex: 10,
         cursor: "nesw-resize",
         opacity: 0.7,
         position: "absolute",
         top: 0,
         right: 0,
-        width: 18,
-        height: 18,
+        width: 24,
+        height: 24,
         borderRightWidth: 3,
         borderTopWidth: 3,
         borderColor: "#fff",
     },
     bottomLeftCornerHandle: {
-        zIndex: 3,
+        zIndex: 10,
         cursor: "nesw-resize",
         opacity: 0.7,
         position: "absolute",
         left: 0,
         bottom: 0,
-        width: 18,
-        height: 18,
+        width: 24,
+        height: 24,
         borderLeftWidth: 3,
         borderBottomWidth: 3,
         borderColor: "#fff",
     },
     bottomRightCornerHandle: {
-        zIndex: 3,
+        zIndex: 10,
         cursor: "nwse-resize",
         opacity: 0.7,
         position: "absolute",
         right: 0,
         bottom: 0,
-        width: 18,
-        height: 18,
+        width: 24,
+        height: 24,
         borderRightWidth: 3,
         borderBottomWidth: 3,
         borderColor: "#fff",
     },
+    topLeftCornerOuterHandle: {
+        zIndex: 10,
+        cursor: "nwse-resize",
+        position: "absolute",
+        left: -24,
+        top: -24,
+        width: 48,
+        height: 48,
+    },
+    topRightCornerOuterHandle: {
+        zIndex: 10,
+        cursor: "nesw-resize",
+        position: "absolute",
+        top: -24,
+        right: -24,
+        width: 48,
+        height: 48,
+    },
+    bottomLeftCornerOuterHandle: {
+        zIndex: 10,
+        cursor: "nesw-resize",
+        position: "absolute",
+        left: -24,
+        bottom: -24,
+        width: 48,
+        height: 48,
+    },
+    bottomRightCornerOuterHandle: {
+        zIndex: 10,
+        cursor: "nwse-resize",
+        position: "absolute",
+        right: -24,
+        bottom: -24,
+        width: 48,
+        height: 48,
+    },
     topEdgeOuterHandle: {
-        height: 10,
-        top: -10,
-        left: 15,
-        right: 15,
+        height: 40,
+        top: -20,
+        left: 0,
+        right: 0,
         position: "absolute",
         cursor: "ns-resize",
     },
     bottomEdgeOuterHandle: {
-        height: 10,
+        height: 40,
         position: "absolute",
-        bottom: -10,
-        left: 15,
-        right: 15,
+        bottom: -20,
+        left: 0,
+        right: 0,
         cursor: "ns-resize",
     },
     leftEdgeOuterHandle: {
-        width: 10,
+        width: 40,
         position: "absolute",
-        top: 15,
-        bottom: 15,
-        left: -10,
+        top: 0,
+        bottom: 0,
+        left: -20,
         cursor: "ew-resize",
     },
     rightEdgeOuterHandle: {
-        width: 10,
+        width: 40,
         position: "absolute",
-        top: 15,
-        bottom: 15,
-        right: -10,
+        top: 0,
+        bottom: 0,
+        right: -20,
         cursor: "ew-resize",
     },
 });
