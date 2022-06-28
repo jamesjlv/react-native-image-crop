@@ -176,7 +176,7 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
               resizeCropBox();
               break;
             }
-            case EditorDragMode.IMAGE:
+            // case EditorDragMode.IMAGE:
             default: {
               imageOffsetX.current +=
                 lastGestureDx.current === null

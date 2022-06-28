@@ -1,6 +1,6 @@
 {
   "name": "@mtourj/react-native-image-crop",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "A dynamic image cropping component with gestures and web support",
   "main": "build/index.js",
   "author": "Mohammad Tourjoman <mtourjoman01@hotmail.com>",
@@ -28,6 +28,6 @@
     "@types/react-native": "^0.67.3"
   },
   "scripts": {
-    "build": "build.sh"
+    "build": "bash ./build.sh"
   }
 }
