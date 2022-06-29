@@ -23,20 +23,23 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EditorDragMode = void 0;
+exports.DragMode = void 0;
 const react_1 = __importStar(require("react"));
 const react_native_1 = require("react-native");
-var EditorDragMode;
-(function (EditorDragMode) {
-    EditorDragMode["IMAGE"] = "image";
-    EditorDragMode["SELECTION"] = "selection";
-})(EditorDragMode = exports.EditorDragMode || (exports.EditorDragMode = {}));
+var DragMode;
+(function (DragMode) {
+    DragMode["IMAGE"] = "image";
+    DragMode["SELECTION"] = "selection";
+})(DragMode = exports.DragMode || (exports.DragMode = {}));
 const DEFAULT_MAX_SCALE = 3;
+const DEFAULT_CROP_SIZE = 350;
 const MINIMUM_IMAGE_SIZE = 80;
 const { width: DEVICE_WIDTH, height: DEVICE_HEIGHT } = react_native_1.Dimensions.get("screen");
 const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
-    var _a;
-    const maxScale = (_a = props.maxScale) !== null && _a !== void 0 ? _a : DEFAULT_MAX_SCALE;
+    var _a, _b, _c;
+    const initialCropBoxWidth = (_a = props.initialCropBoxWidth) !== null && _a !== void 0 ? _a : DEFAULT_CROP_SIZE * (props.imageWidth / DEFAULT_CROP_SIZE);
+    const initialCropBoxHeight = (_b = props.initialCropBoxHeight) !== null && _b !== void 0 ? _b : DEFAULT_CROP_SIZE * (props.imageHeight / DEFAULT_CROP_SIZE);
+    const maxScale = (_c = props.maxScale) !== null && _c !== void 0 ? _c : DEFAULT_MAX_SCALE;
     /** Rendered width & height of image (at scale of 1) */
     const [_imageWidth, setImageWidth] = (0, react_1.useState)(0);
     const [_imageHeight, setImageHeight] = (0, react_1.useState)(0);
@@ -74,6 +77,16 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         left: new react_native_1.Animated.Value(0),
     });
     const cropBoxImageOffset = (0, react_1.useRef)(new react_native_1.Animated.ValueXY({ x: 0, y: 0 }));
+    function getCropBoxWidth() {
+        return (imageWidthRef.current -
+            cropBoxPosition.current.left -
+            cropBoxPosition.current.right);
+    }
+    function getCropBoxHeight() {
+        return (imageHeightRef.current -
+            cropBoxPosition.current.top -
+            cropBoxPosition.current.bottom);
+    }
     const scale = (0, react_1.useRef)(1);
     const animatedScale = (0, react_1.useRef)(new react_native_1.Animated.Value(scale.current));
     /** Gesture context */
@@ -109,12 +122,12 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
     (0, react_1.useEffect)(function calibrate() {
         // Calibrate internal dimensions based on provided dimensions
         if (props.imageWidth < props.imageHeight) {
-            setImageWidth(props.cropBoxWidth);
-            setImageHeight((props.imageHeight / props.imageWidth) * props.cropBoxHeight);
+            setImageWidth(initialCropBoxWidth);
+            setImageHeight((props.imageHeight / props.imageWidth) * initialCropBoxHeight);
         }
         else {
-            setImageWidth((props.imageWidth / props.imageHeight) * props.cropBoxWidth);
-            setImageHeight(props.cropBoxHeight);
+            setImageWidth((props.imageWidth / props.imageHeight) * initialCropBoxWidth);
+            setImageHeight(initialCropBoxHeight);
         }
         // Get diagonal size
         imageDiagonal.current = Math.floor(Math.sqrt(Math.pow(imageWidthRef.current, 2) +
@@ -122,8 +135,8 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
     }, [
         props.imageWidth,
         props.imageHeight,
-        props.cropBoxHeight,
-        props.cropBoxWidth,
+        props.initialCropBoxHeight,
+        props.initialCropBoxWidth,
     ]);
     const imageDragAndPinchResponder = (0, react_1.useMemo)(() => {
         return react_native_1.PanResponder.create({
@@ -140,7 +153,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                 if (changedTouches.length <= 1) {
                     // Handle drag
                     switch (props.dragMode) {
-                        case EditorDragMode.SELECTION: {
+                        case DragMode.SELECTION: {
                             const incrementDx = lastGestureDx.current === null
                                 ? 0
                                 : gestureState.dx - lastGestureDx.current;
@@ -161,7 +174,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                             resizeCropBox();
                             break;
                         }
-                        case EditorDragMode.IMAGE:
+                        case DragMode.IMAGE:
                         default: {
                             imageOffsetX.current +=
                                 lastGestureDx.current === null
@@ -292,7 +305,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         return panResponders.current[position];
     };
     function recenterCropBox() {
-        if (props.dragMode !== EditorDragMode.IMAGE)
+        if (props.dragMode !== DragMode.IMAGE)
             return;
         isCropBoxMoving.current = true;
         const cropBoxWidth = imageWidthRef.current -
@@ -341,14 +354,10 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         });
     }
     function translateImage() {
-        const maxOffsetX = (imageWidthRef.current - props.cropBoxWidth / scale.current) / 2 +
-            cropBoxPosition.current.left / scale.current;
-        const minOffsetX = -(imageWidthRef.current - props.cropBoxWidth / scale.current) / 2 -
-            cropBoxPosition.current.right / scale.current;
-        const maxOffsetY = (imageHeightRef.current - props.cropBoxHeight / scale.current) / 2 +
-            cropBoxPosition.current.top / scale.current;
-        const minOffsetY = -(imageHeightRef.current - props.cropBoxHeight / scale.current) / 2 -
-            cropBoxPosition.current.bottom / scale.current;
+        const maxOffsetX = (imageWidthRef.current - getCropBoxWidth() / scale.current) / 2;
+        const minOffsetX = -(imageWidthRef.current - getCropBoxWidth() / scale.current) / 2;
+        const maxOffsetY = (imageHeightRef.current - getCropBoxHeight() / scale.current) / 2;
+        const minOffsetY = -(imageHeightRef.current - getCropBoxHeight() / scale.current) / 2;
         if (imageOffsetX.current > maxOffsetX) {
             imageOffsetX.current = maxOffsetX;
         }
@@ -416,20 +425,20 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
             }
             // Effect of offset
             if (position === "top") {
-                minValue += imageOffsetY.current;
-                maxValue += imageOffsetY.current;
+                minValue += imageOffsetY.current * scale.current;
+                maxValue += imageOffsetY.current * scale.current;
             }
             else if (position === "bottom") {
-                maxValue -= imageOffsetY.current;
-                minValue -= imageOffsetY.current;
+                maxValue -= imageOffsetY.current * scale.current;
+                minValue -= imageOffsetY.current * scale.current;
             }
             else if (position === "left") {
-                minValue += imageOffsetX.current;
-                maxValue += imageOffsetX.current;
+                minValue += imageOffsetX.current * scale.current;
+                maxValue += imageOffsetX.current * scale.current;
             }
             else if (position === "right") {
-                minValue -= imageOffsetX.current;
-                maxValue -= imageOffsetX.current;
+                minValue -= imageOffsetX.current * scale.current;
+                maxValue -= imageOffsetX.current * scale.current;
             }
             // Effect of opposite edge
             let oppositePosition;
@@ -529,11 +538,11 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
     }
     (0, react_1.useImperativeHandle)(ref, () => {
         function getCropData() {
-            const { cropBoxWidth, cropBoxHeight, imageWidth: _imageWidth, imageHeight: _imageHeight, } = props;
+            const { imageWidth: _imageWidth, imageHeight: _imageHeight } = props;
             const ratioX = _imageWidth / imageWidthRef.current;
             const ratioY = _imageHeight / imageHeightRef.current;
-            const width = cropBoxWidth / scale.current;
-            const height = cropBoxHeight / scale.current;
+            const width = getCropBoxWidth() / scale.current;
+            const height = getCropBoxHeight() / scale.current;
             const x = imageWidthRef.current / 2 - (width / 2 + imageOffsetX.current);
             const y = imageHeightRef.current / 2 - (height / 2 + imageOffsetY.current);
             return {
