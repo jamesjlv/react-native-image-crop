@@ -45,7 +45,7 @@ interface IImageCropProps {
   initialCropBoxHeight?: number;
   containerStyle?: ViewStyle;
   /** Enable circular selection. Setting to true will also
-   * preserve aspect ratio of the crop box */
+   * force the crop box to be a square */
   circular?: boolean;
   maxScale?: number;
   /** Default is false. If set, cropping box will always keep
@@ -68,12 +68,19 @@ const MINIMUM_IMAGE_SIZE = 80;
 const { width: DEVICE_WIDTH, height: DEVICE_HEIGHT } = Dimensions.get("screen");
 
 const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
-  const initialCropBoxWidth =
+  let initialCropBoxWidth =
     props.initialCropBoxWidth ??
     DEFAULT_CROP_SIZE * (props.imageWidth / DEFAULT_CROP_SIZE);
-  const initialCropBoxHeight =
+  let initialCropBoxHeight =
     props.initialCropBoxHeight ??
     DEFAULT_CROP_SIZE * (props.imageHeight / DEFAULT_CROP_SIZE);
+
+  /** Force the crop box to be a square if `circular` is set */
+  if (props.circular) {
+    const largerSide = Math.max(initialCropBoxHeight, initialCropBoxHeight);
+    initialCropBoxHeight = largerSide;
+    initialCropBoxWidth = largerSide;
+  }
 
   const maxScale = props.maxScale ?? DEFAULT_MAX_SCALE;
 
@@ -150,6 +157,24 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
     imageHeightRef.current = _imageHeight;
   }, [_imageHeight]);
 
+  // useEffect(() => {
+  //   if (isDragging) {
+  //     Animated.timing(animatedOverflowImageOpacity.current, {
+  //       toValue: 0.7,
+  //       useNativeDriver: true,
+  //       duration: 100,
+  //       easing: Easing.out(Easing.poly(4)),
+  //     }).start();
+  //   } else {
+  //     Animated.timing(animatedOverflowImageOpacity.current, {
+  //       toValue: 0.4,
+  //       useNativeDriver: true,
+  //       duration: 140,
+  //       easing: Easing.out(Easing.poly(4)),
+  //     }).start();
+  //   }
+  // }, [isDragging]);
+
   useEffect(
     function calibrate() {
       // Calibrate internal dimensions based on provided dimensions
@@ -177,6 +202,12 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
           height = initialCropBoxHeight;
         }
       }
+
+      // if (cropBoxRatio > 1) {
+      //   height = cropBoxRatio * height;
+      // } else {
+      //   width = cropBoxRatio * width;
+      // }
 
       setImageWidth(width);
       setImageHeight(height);

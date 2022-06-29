@@ -37,8 +37,14 @@ const MINIMUM_IMAGE_SIZE = 80;
 const { width: DEVICE_WIDTH, height: DEVICE_HEIGHT } = react_native_1.Dimensions.get("screen");
 const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
     var _a, _b, _c;
-    const initialCropBoxWidth = (_a = props.initialCropBoxWidth) !== null && _a !== void 0 ? _a : DEFAULT_CROP_SIZE * (props.imageWidth / DEFAULT_CROP_SIZE);
-    const initialCropBoxHeight = (_b = props.initialCropBoxHeight) !== null && _b !== void 0 ? _b : DEFAULT_CROP_SIZE * (props.imageHeight / DEFAULT_CROP_SIZE);
+    let initialCropBoxWidth = (_a = props.initialCropBoxWidth) !== null && _a !== void 0 ? _a : DEFAULT_CROP_SIZE * (props.imageWidth / DEFAULT_CROP_SIZE);
+    let initialCropBoxHeight = (_b = props.initialCropBoxHeight) !== null && _b !== void 0 ? _b : DEFAULT_CROP_SIZE * (props.imageHeight / DEFAULT_CROP_SIZE);
+    /** Force the crop box to be a square if `circular` is set */
+    if (props.circular) {
+        const largerSide = Math.max(initialCropBoxHeight, initialCropBoxHeight);
+        initialCropBoxHeight = largerSide;
+        initialCropBoxWidth = largerSide;
+    }
     const maxScale = (_c = props.maxScale) !== null && _c !== void 0 ? _c : DEFAULT_MAX_SCALE;
     /** Rendered width & height of image (at scale of 1) */
     const [_imageWidth, setImageWidth] = (0, react_1.useState)(0);
@@ -49,17 +55,10 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
     // For for animating automated cropbox re-centers
     const viewportOffset = (0, react_1.useRef)(new react_native_1.Animated.ValueXY({ x: 0, y: 0 }));
     const isCropBoxMoving = (0, react_1.useRef)(false);
-    // const [activeCorners, setActiveCorners] = useState({
-    //   "top-left": false,
-    //   "top-right": false,
-    //   "bottom-left": false,
-    //   "bottom-right": false,
-    // });
     const topEdgeActivityIndicatorScale = (0, react_1.useRef)(new react_native_1.Animated.Value(0));
     const bottomEdgeActivityIndicatorScale = (0, react_1.useRef)(new react_native_1.Animated.Value(0));
     const rightEdgeActivityIndicatorScale = (0, react_1.useRef)(new react_native_1.Animated.Value(0));
     const leftEdgeActivityIndicatorScale = (0, react_1.useRef)(new react_native_1.Animated.Value(0));
-    const [isDragging, setIsDragging] = (0, react_1.useState)(false);
     const imageOffsetX = (0, react_1.useRef)(0);
     const imageOffsetY = (0, react_1.useRef)(0);
     const animatedImageOffset = (0, react_1.useRef)(new react_native_1.Animated.ValueXY({ x: 0, y: 0 }));
@@ -101,36 +100,54 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
     (0, react_1.useEffect)(() => {
         imageHeightRef.current = _imageHeight;
     }, [_imageHeight]);
-    (0, react_1.useEffect)(() => {
-        if (isDragging) {
-            react_native_1.Animated.timing(animatedOverflowImageOpacity.current, {
-                toValue: 0.7,
-                useNativeDriver: true,
-                duration: 100,
-                easing: react_native_1.Easing.out(react_native_1.Easing.poly(4)),
-            }).start();
-        }
-        else {
-            react_native_1.Animated.timing(animatedOverflowImageOpacity.current, {
-                toValue: 0.4,
-                useNativeDriver: true,
-                duration: 140,
-                easing: react_native_1.Easing.out(react_native_1.Easing.poly(4)),
-            }).start();
-        }
-    }, [isDragging]);
+    // useEffect(() => {
+    //   if (isDragging) {
+    //     Animated.timing(animatedOverflowImageOpacity.current, {
+    //       toValue: 0.7,
+    //       useNativeDriver: true,
+    //       duration: 100,
+    //       easing: Easing.out(Easing.poly(4)),
+    //     }).start();
+    //   } else {
+    //     Animated.timing(animatedOverflowImageOpacity.current, {
+    //       toValue: 0.4,
+    //       useNativeDriver: true,
+    //       duration: 140,
+    //       easing: Easing.out(Easing.poly(4)),
+    //     }).start();
+    //   }
+    // }, [isDragging]);
     (0, react_1.useEffect)(function calibrate() {
         // Calibrate internal dimensions based on provided dimensions
+        const cropBoxRatio = initialCropBoxWidth / initialCropBoxHeight;
+        const imageRatio = props.imageWidth / props.imageHeight;
         let width;
         let height;
         if (props.imageWidth < props.imageHeight) {
-            width = initialCropBoxWidth;
-            height = (props.imageHeight / props.imageWidth) * initialCropBoxHeight;
+            if (cropBoxRatio > 1) {
+                width = initialCropBoxWidth;
+                height = (initialCropBoxHeight / imageRatio) * cropBoxRatio;
+            }
+            else {
+                width = (initialCropBoxWidth * imageRatio) / cropBoxRatio;
+                height = initialCropBoxHeight;
+            }
         }
         else {
-            width = (props.imageWidth / props.imageHeight) * initialCropBoxWidth;
-            height = initialCropBoxHeight;
+            if (cropBoxRatio > 1) {
+                width = initialCropBoxWidth;
+                height = (initialCropBoxHeight / imageRatio) * cropBoxRatio;
+            }
+            else {
+                width = (initialCropBoxWidth * imageRatio) / cropBoxRatio;
+                height = initialCropBoxHeight;
+            }
         }
+        // if (cropBoxRatio > 1) {
+        //   height = cropBoxRatio * height;
+        // } else {
+        //   width = cropBoxRatio * width;
+        // }
         setImageWidth(width);
         setImageHeight(height);
         // Immediate update refs because they will be used by resizeCropBox() before useEffect can update them
@@ -244,7 +261,8 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         if (!panResponders.current[position])
             panResponders.current[position] = react_native_1.PanResponder.create({
                 onStartShouldSetPanResponder: () => {
-                    return !isCropBoxMoving.current;
+                    // If fixedRatio is enabled, do not respond to edge movement
+                    return (!isCropBoxMoving.current && !props.circular && !props.fixedRatio);
                 },
                 onPanResponderGrant: () => {
                     lastGestureDx.current = 0;
@@ -288,12 +306,34 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                     lastGestureDy.current = 0;
                 },
                 onPanResponderMove: (event, gestureState) => {
-                    const incrementDx = lastGestureDx.current
+                    let incrementDx = lastGestureDx.current
                         ? gestureState.dx - lastGestureDx.current
                         : 0;
-                    const incrementDy = lastGestureDy.current
+                    let incrementDy = lastGestureDy.current
                         ? gestureState.dy - lastGestureDy.current
                         : 0;
+                    if (props.fixedRatio) {
+                        let ratioX = getCropBoxWidth() / getCropBoxHeight();
+                        let ratioY = 1 / ratioX;
+                        if (ratioX < 1)
+                            ratioX = 1;
+                        if (ratioY < 1)
+                            ratioY = 1;
+                        let movementX = position === "top-right" ? incrementDx * -1 : incrementDx;
+                        let movementY = position === "bottom-right" ? incrementDy * -1 : incrementDy;
+                        // get diagonal distance
+                        const incrementDd = Math.floor(Math.sqrt(Math.pow(incrementDx, 2) + Math.pow(incrementDy, 2))) / Math.sqrt(2);
+                        const incrementDdirection = movementX + movementY > 0 ? 1 : 0;
+                        let multiplier = 1;
+                        if (incrementDdirection === 0)
+                            multiplier *= -1;
+                        incrementDx = (incrementDd / ratioY) * multiplier;
+                        incrementDy = (incrementDd / ratioX) * multiplier;
+                        if (position === "top-right" || position === "bottom-right")
+                            incrementDx *= -1;
+                        if (position === "bottom-left" || position === "bottom-right")
+                            incrementDy *= -1;
+                    }
                     if (position === "top-left" || position === "top-right") {
                         cropBoxPosition.current.top += incrementDy;
                     }
@@ -481,6 +521,20 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
             // Store calculated minimum and maximum values for later use
             minValues[position] = minValue;
             maxValues[position] = maxValue;
+            // If we have `fixedRatio` set and we are out of bounds, that means
+            // we do not want to move at all, so we can just return the original position
+            if (props.fixedRatio && (value < minValue || value > maxValue)) {
+                return {
+                    // @ts-ignore
+                    top: animatedCropBoxPosition.current.top.__getValue(),
+                    // @ts-ignore
+                    bottom: animatedCropBoxPosition.current.bottom.__getValue(),
+                    // @ts-ignore
+                    right: animatedCropBoxPosition.current.right.__getValue(),
+                    // @ts-ignore
+                    left: animatedCropBoxPosition.current.left.__getValue(),
+                };
+            }
             // Clamp to constraints
             if (value < minValue) {
                 value = minValue;
@@ -497,7 +551,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
             const cropBoxHeight = imageHeightRef.current -
                 cropBoxPosition.current.top -
                 cropBoxPosition.current.bottom;
-            // Make sure that the crop box remains keeps its dimensions when dragged to the edges
+            // Make sure that the crop box keeps its dimensions when dragged to the edges
             for (let position in calculatedPosition) {
                 const value = calculatedPosition[position];
                 const minValue = minValues[position];
@@ -727,7 +781,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                         cropBoxStyle,
                         { display: props.circular ? "none" : "flex" },
                     ] },
-                    react_1.default.createElement(react_native_1.View, { style: [styles.topEdgeHandle] },
+                    react_1.default.createElement(react_native_1.View, { style: [styles.topEdgeHandle], pointerEvents: props.fixedRatio ? "none" : "auto" },
                         react_1.default.createElement(react_native_1.Animated.View, { style: [
                                 styles.topEdgeActivityIndicator,
                                 {
@@ -739,7 +793,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                                 },
                             ] }),
                         react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.topEdgeOuterHandle }, getEdgeCropHandlePanResponder("top").panHandlers))),
-                    react_1.default.createElement(react_native_1.View, { style: [styles.bottomEdgeHandle] },
+                    react_1.default.createElement(react_native_1.View, { style: [styles.bottomEdgeHandle], pointerEvents: props.fixedRatio ? "none" : "auto" },
                         react_1.default.createElement(react_native_1.Animated.View, { style: [
                                 styles.bottomEdgeActivityIndicator,
                                 {
@@ -751,7 +805,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                                 },
                             ] }),
                         react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.bottomEdgeOuterHandle }, getEdgeCropHandlePanResponder("bottom").panHandlers))),
-                    react_1.default.createElement(react_native_1.View, { style: [styles.leftEdgeHandle] },
+                    react_1.default.createElement(react_native_1.View, { style: [styles.leftEdgeHandle], pointerEvents: props.fixedRatio ? "none" : "auto" },
                         react_1.default.createElement(react_native_1.Animated.View, { style: [
                                 styles.leftEdgeActivityIndicator,
                                 {
@@ -763,7 +817,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                                 },
                             ] }),
                         react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.leftEdgeOuterHandle }, getEdgeCropHandlePanResponder("left").panHandlers))),
-                    react_1.default.createElement(react_native_1.View, { style: [styles.rightEdgeHandle] },
+                    react_1.default.createElement(react_native_1.View, { style: [styles.rightEdgeHandle], pointerEvents: props.fixedRatio ? "none" : "auto" },
                         react_1.default.createElement(react_native_1.Animated.View, { style: [
                                 styles.rightEdgeActivityIndicator,
                                 {
