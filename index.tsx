@@ -28,22 +28,31 @@ type CropHandleCornerPosition =
 
 type CropHandleEdgePosition = "left" | "top" | "right" | "bottom";
 
-export enum EditorDragMode {
+export enum DragMode {
   IMAGE = "image",
   SELECTION = "selection",
 }
 
 interface IImageCropProps {
   source: ImageSourcePropType;
+  /** Width of source image - Required */
   imageWidth: number;
+  /** Height of source image - Required */
   imageHeight: number;
-  cropBoxWidth: number;
-  cropBoxHeight: number;
+  /** Width of cropping area */
+  initialCropBoxWidth?: number;
+  /** Height of cropping area */
+  initialCropBoxHeight?: number;
   containerStyle?: ViewStyle;
+  /** Enable circular selection. Setting to true will also
+   * force the crop box to be a square */
   circular?: boolean;
   maxScale?: number;
-  /** Default is `selection` */
-  dragMode?: EditorDragMode;
+  /** Default is false. If set, cropping box will always keep
+   * an aspect ratio of cropBoxWidth / cropBoxHeight */
+  fixedRatio?: boolean;
+  /** Default is `DragMode.IMAGE` */
+  dragMode?: DragMode;
   zoomData?: {
     offsetX: number;
     offsetY: number;
@@ -53,12 +62,19 @@ interface IImageCropProps {
 }
 
 const DEFAULT_MAX_SCALE = 3;
-
+const DEFAULT_CROP_SIZE = 350;
 const MINIMUM_IMAGE_SIZE = 80;
 
 const { width: DEVICE_WIDTH, height: DEVICE_HEIGHT } = Dimensions.get("screen");
 
 const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
+  const initialCropBoxWidth =
+    props.initialCropBoxWidth ??
+    DEFAULT_CROP_SIZE * (props.imageWidth / DEFAULT_CROP_SIZE);
+  const initialCropBoxHeight =
+    props.initialCropBoxHeight ??
+    DEFAULT_CROP_SIZE * (props.imageHeight / DEFAULT_CROP_SIZE);
+
   const maxScale = props.maxScale ?? DEFAULT_MAX_SCALE;
 
   /** Rendered width & height of image (at scale of 1) */
@@ -105,6 +121,22 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
   });
   const cropBoxImageOffset = useRef(new Animated.ValueXY({ x: 0, y: 0 }));
 
+  function getCropBoxWidth() {
+    return (
+      imageWidthRef.current -
+      cropBoxPosition.current.left -
+      cropBoxPosition.current.right
+    );
+  }
+
+  function getCropBoxHeight() {
+    return (
+      imageHeightRef.current -
+      cropBoxPosition.current.top -
+      cropBoxPosition.current.bottom
+    );
+  }
+
   const scale = useRef<number>(1);
   const animatedScale = useRef(new Animated.Value(scale.current));
 
@@ -148,15 +180,15 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
       // Calibrate internal dimensions based on provided dimensions
 
       if (props.imageWidth < props.imageHeight) {
-        setImageWidth(props.cropBoxWidth);
+        setImageWidth(initialCropBoxWidth);
         setImageHeight(
-          (props.imageHeight / props.imageWidth) * props.cropBoxHeight
+          (props.imageHeight / props.imageWidth) * initialCropBoxHeight
         );
       } else {
         setImageWidth(
-          (props.imageWidth / props.imageHeight) * props.cropBoxWidth
+          (props.imageWidth / props.imageHeight) * initialCropBoxWidth
         );
-        setImageHeight(props.cropBoxHeight);
+        setImageHeight(initialCropBoxHeight);
       }
 
       // Get diagonal size
@@ -170,8 +202,8 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
     [
       props.imageWidth,
       props.imageHeight,
-      props.cropBoxHeight,
-      props.cropBoxWidth,
+      props.initialCropBoxHeight,
+      props.initialCropBoxWidth,
     ]
   );
 
@@ -192,7 +224,7 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
           // Handle drag
 
           switch (props.dragMode) {
-            case EditorDragMode.SELECTION: {
+            case DragMode.SELECTION: {
               const incrementDx =
                 lastGestureDx.current === null
                   ? 0
@@ -219,7 +251,7 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
               resizeCropBox();
               break;
             }
-            case EditorDragMode.IMAGE:
+            case DragMode.IMAGE:
             default: {
               imageOffsetX.current +=
                 lastGestureDx.current === null
@@ -374,7 +406,7 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
   };
 
   function recenterCropBox() {
-    if (props.dragMode !== EditorDragMode.IMAGE) return;
+    if (props.dragMode !== DragMode.IMAGE) return;
 
     isCropBoxMoving.current = true;
 
@@ -438,17 +470,13 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
 
   function translateImage() {
     const maxOffsetX =
-      (imageWidthRef.current - props.cropBoxWidth / scale.current) / 2 +
-      cropBoxPosition.current.left / scale.current;
+      (imageWidthRef.current - getCropBoxWidth() / scale.current) / 2;
     const minOffsetX =
-      -(imageWidthRef.current - props.cropBoxWidth / scale.current) / 2 -
-      cropBoxPosition.current.right / scale.current;
+      -(imageWidthRef.current - getCropBoxWidth() / scale.current) / 2;
     const maxOffsetY =
-      (imageHeightRef.current - props.cropBoxHeight / scale.current) / 2 +
-      cropBoxPosition.current.top / scale.current;
+      (imageHeightRef.current - getCropBoxHeight() / scale.current) / 2;
     const minOffsetY =
-      -(imageHeightRef.current - props.cropBoxHeight / scale.current) / 2 -
-      cropBoxPosition.current.bottom / scale.current;
+      -(imageHeightRef.current - getCropBoxHeight() / scale.current) / 2;
 
     if (imageOffsetX.current > maxOffsetX) {
       imageOffsetX.current = maxOffsetX;
@@ -524,17 +552,17 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
 
       // Effect of offset
       if (position === "top") {
-        minValue += imageOffsetY.current;
-        maxValue += imageOffsetY.current;
+        minValue += imageOffsetY.current * scale.current;
+        maxValue += imageOffsetY.current * scale.current;
       } else if (position === "bottom") {
-        maxValue -= imageOffsetY.current;
-        minValue -= imageOffsetY.current;
+        maxValue -= imageOffsetY.current * scale.current;
+        minValue -= imageOffsetY.current * scale.current;
       } else if (position === "left") {
-        minValue += imageOffsetX.current;
-        maxValue += imageOffsetX.current;
+        minValue += imageOffsetX.current * scale.current;
+        maxValue += imageOffsetX.current * scale.current;
       } else if (position === "right") {
-        minValue -= imageOffsetX.current;
-        maxValue -= imageOffsetX.current;
+        minValue -= imageOffsetX.current * scale.current;
+        maxValue -= imageOffsetX.current * scale.current;
       }
 
       // Effect of opposite edge
@@ -664,17 +692,12 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
 
   useImperativeHandle(ref, () => {
     function getCropData() {
-      const {
-        cropBoxWidth,
-        cropBoxHeight,
-        imageWidth: _imageWidth,
-        imageHeight: _imageHeight,
-      } = props;
+      const { imageWidth: _imageWidth, imageHeight: _imageHeight } = props;
 
       const ratioX = _imageWidth / imageWidthRef.current;
       const ratioY = _imageHeight / imageHeightRef.current;
-      const width = cropBoxWidth / scale.current;
-      const height = cropBoxHeight / scale.current;
+      const width = getCropBoxWidth() / scale.current;
+      const height = getCropBoxHeight() / scale.current;
       const x = imageWidthRef.current / 2 - (width / 2 + imageOffsetX.current);
       const y =
         imageHeightRef.current / 2 - (height / 2 + imageOffsetY.current);
