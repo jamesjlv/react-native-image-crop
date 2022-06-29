@@ -179,17 +179,33 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
     function calibrate() {
       // Calibrate internal dimensions based on provided dimensions
 
+      let width;
+      let height;
+
       if (props.imageWidth < props.imageHeight) {
-        setImageWidth(initialCropBoxWidth);
-        setImageHeight(
-          (props.imageHeight / props.imageWidth) * initialCropBoxHeight
-        );
+        width = initialCropBoxWidth;
+        height = (props.imageHeight / props.imageWidth) * initialCropBoxHeight;
       } else {
-        setImageWidth(
-          (props.imageWidth / props.imageHeight) * initialCropBoxWidth
-        );
-        setImageHeight(initialCropBoxHeight);
+        width = (props.imageWidth / props.imageHeight) * initialCropBoxWidth;
+        height = initialCropBoxHeight;
       }
+
+      setImageWidth(width);
+      setImageHeight(height);
+      // Immediate update refs because they will be used by resizeCropBox() before useEffect can update them
+      imageWidthRef.current = width;
+      imageHeightRef.current = height;
+
+      // Get crop box offset so that it matches the provided initialCropBoxWidth/Height
+      let offsetX = Math.max(width - initialCropBoxWidth, 0);
+      let offsetY = Math.max(height - initialCropBoxHeight, 0);
+
+      cropBoxPosition.current.top = offsetY / 2;
+      cropBoxPosition.current.bottom = offsetY / 2;
+      cropBoxPosition.current.right = offsetX / 2;
+      cropBoxPosition.current.left = offsetX / 2;
+
+      resizeCropBox();
 
       // Get diagonal size
       imageDiagonal.current = Math.floor(
@@ -410,14 +426,8 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
 
     isCropBoxMoving.current = true;
 
-    const cropBoxWidth =
-      imageWidthRef.current -
-      cropBoxPosition.current.left -
-      cropBoxPosition.current.right;
-    const cropBoxHeight =
-      imageHeightRef.current -
-      cropBoxPosition.current.top -
-      cropBoxPosition.current.bottom;
+    const cropBoxWidth = getCropBoxWidth();
+    const cropBoxHeight = getCropBoxHeight();
 
     const centeredPosition = {
       left: (imageWidthRef.current - cropBoxWidth) / 2,
