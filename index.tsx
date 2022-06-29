@@ -39,13 +39,13 @@ interface IImageCropProps {
   imageWidth: number;
   /** Height of source image - Required */
   imageHeight: number;
-  /** Width of cropping area */
+  /** Width of cropping area*/
   initialCropBoxWidth?: number;
-  /** Height of cropping area */
+  /** Height of cropping area*/
   initialCropBoxHeight?: number;
   containerStyle?: ViewStyle;
   /** Enable circular selection. Setting to true will also
-   * force the crop box to be a square */
+   * preserve aspect ratio of the crop box */
   circular?: boolean;
   maxScale?: number;
   /** Default is false. If set, cropping box will always keep
@@ -89,17 +89,10 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
 
   const isCropBoxMoving = useRef(false);
 
-  // const [activeCorners, setActiveCorners] = useState({
-  //   "top-left": false,
-  //   "top-right": false,
-  //   "bottom-left": false,
-  //   "bottom-right": false,
-  // });
   const topEdgeActivityIndicatorScale = useRef(new Animated.Value(0));
   const bottomEdgeActivityIndicatorScale = useRef(new Animated.Value(0));
   const rightEdgeActivityIndicatorScale = useRef(new Animated.Value(0));
   const leftEdgeActivityIndicatorScale = useRef(new Animated.Value(0));
-  const [isDragging, setIsDragging] = useState(false);
 
   const imageOffsetX = useRef<number>(0);
   const imageOffsetY = useRef<number>(0);
@@ -157,37 +150,32 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
     imageHeightRef.current = _imageHeight;
   }, [_imageHeight]);
 
-  useEffect(() => {
-    if (isDragging) {
-      Animated.timing(animatedOverflowImageOpacity.current, {
-        toValue: 0.7,
-        useNativeDriver: true,
-        duration: 100,
-        easing: Easing.out(Easing.poly(4)),
-      }).start();
-    } else {
-      Animated.timing(animatedOverflowImageOpacity.current, {
-        toValue: 0.4,
-        useNativeDriver: true,
-        duration: 140,
-        easing: Easing.out(Easing.poly(4)),
-      }).start();
-    }
-  }, [isDragging]);
-
   useEffect(
     function calibrate() {
       // Calibrate internal dimensions based on provided dimensions
+
+      const cropBoxRatio = initialCropBoxWidth / initialCropBoxHeight;
+      const imageRatio = props.imageWidth / props.imageHeight;
 
       let width;
       let height;
 
       if (props.imageWidth < props.imageHeight) {
-        width = initialCropBoxWidth;
-        height = (props.imageHeight / props.imageWidth) * initialCropBoxHeight;
+        if (cropBoxRatio > 1) {
+          width = initialCropBoxWidth;
+          height = (initialCropBoxHeight / imageRatio) * cropBoxRatio;
+        } else {
+          width = (initialCropBoxWidth * imageRatio) / cropBoxRatio;
+          height = initialCropBoxHeight;
+        }
       } else {
-        width = (props.imageWidth / props.imageHeight) * initialCropBoxWidth;
-        height = initialCropBoxHeight;
+        if (cropBoxRatio > 1) {
+          width = initialCropBoxWidth;
+          height = (initialCropBoxHeight / imageRatio) * cropBoxRatio;
+        } else {
+          width = (initialCropBoxWidth * imageRatio) / cropBoxRatio;
+          height = initialCropBoxHeight;
+        }
       }
 
       setImageWidth(width);
@@ -333,7 +321,10 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
     if (!panResponders.current[position])
       panResponders.current[position] = PanResponder.create({
         onStartShouldSetPanResponder: () => {
-          return !isCropBoxMoving.current;
+          // If fixedRatio is enabled, do not respond to edge movement
+          return (
+            !isCropBoxMoving.current && !props.circular && !props.fixedRatio
+          );
         },
         onPanResponderGrant: () => {
           lastGestureDx.current = 0;
@@ -385,12 +376,44 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
           lastGestureDy.current = 0;
         },
         onPanResponderMove: (event, gestureState) => {
-          const incrementDx = lastGestureDx.current
+          let incrementDx = lastGestureDx.current
             ? gestureState.dx - lastGestureDx.current
             : 0;
-          const incrementDy = lastGestureDy.current
+          let incrementDy = lastGestureDy.current
             ? gestureState.dy - lastGestureDy.current
             : 0;
+
+          if (props.fixedRatio) {
+            let ratioX = getCropBoxWidth() / getCropBoxHeight();
+            let ratioY = 1 / ratioX;
+
+            if (ratioX < 1) ratioX = 1;
+            if (ratioY < 1) ratioY = 1;
+
+            let movementX =
+              position === "top-right" ? incrementDx * -1 : incrementDx;
+            let movementY =
+              position === "bottom-right" ? incrementDy * -1 : incrementDy;
+
+            // get diagonal distance
+            const incrementDd =
+              Math.floor(
+                Math.sqrt(Math.pow(incrementDx, 2) + Math.pow(incrementDy, 2))
+              ) / Math.sqrt(2);
+            const incrementDdirection = movementX + movementY > 0 ? 1 : 0;
+
+            let multiplier = 1;
+
+            if (incrementDdirection === 0) multiplier *= -1;
+
+            incrementDx = (incrementDd / ratioY) * multiplier;
+            incrementDy = (incrementDd / ratioX) * multiplier;
+
+            if (position === "top-right" || position === "bottom-right")
+              incrementDx *= -1;
+            if (position === "bottom-left" || position === "bottom-right")
+              incrementDy *= -1;
+          }
 
           if (position === "top-left" || position === "top-right") {
             cropBoxPosition.current.top += incrementDy;
@@ -612,6 +635,21 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
       minValues[position] = minValue;
       maxValues[position] = maxValue;
 
+      // If we have `fixedRatio` set and we are out of bounds, that means
+      // we do not want to move at all, so we can just return the original position
+      if (props.fixedRatio && (value < minValue || value > maxValue)) {
+        return {
+          // @ts-ignore
+          top: animatedCropBoxPosition.current.top.__getValue(),
+          // @ts-ignore
+          bottom: animatedCropBoxPosition.current.bottom.__getValue(),
+          // @ts-ignore
+          right: animatedCropBoxPosition.current.right.__getValue(),
+          // @ts-ignore
+          left: animatedCropBoxPosition.current.left.__getValue(),
+        };
+      }
+
       // Clamp to constraints
       if (value < minValue) {
         value = minValue;
@@ -632,7 +670,7 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
         cropBoxPosition.current.top -
         cropBoxPosition.current.bottom;
 
-      // Make sure that the crop box remains keeps its dimensions when dragged to the edges
+      // Make sure that the crop box keeps its dimensions when dragged to the edges
       for (let position in calculatedPosition) {
         const value = calculatedPosition[position];
         const minValue = minValues[position];
@@ -934,7 +972,11 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
             ]}
           >
             {/* EDGE HANDLES */}
-            <View style={[styles.topEdgeHandle]}>
+            {/* TOP */}
+            <View
+              style={[styles.topEdgeHandle]}
+              pointerEvents={props.fixedRatio ? "none" : "auto"}
+            >
               <Animated.View
                 style={[
                   styles.topEdgeActivityIndicator,
@@ -952,7 +994,12 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
                 {...getEdgeCropHandlePanResponder("top").panHandlers}
               />
             </View>
-            <View style={[styles.bottomEdgeHandle]}>
+
+            {/* BOTTOM */}
+            <View
+              style={[styles.bottomEdgeHandle]}
+              pointerEvents={props.fixedRatio ? "none" : "auto"}
+            >
               <Animated.View
                 style={[
                   styles.bottomEdgeActivityIndicator,
@@ -970,7 +1017,12 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
                 {...getEdgeCropHandlePanResponder("bottom").panHandlers}
               />
             </View>
-            <View style={[styles.leftEdgeHandle]}>
+
+            {/* LEFT */}
+            <View
+              style={[styles.leftEdgeHandle]}
+              pointerEvents={props.fixedRatio ? "none" : "auto"}
+            >
               <Animated.View
                 style={[
                   styles.leftEdgeActivityIndicator,
@@ -988,7 +1040,12 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
                 {...getEdgeCropHandlePanResponder("left").panHandlers}
               />
             </View>
-            <View style={[styles.rightEdgeHandle]}>
+
+            {/* RIGHT */}
+            <View
+              style={[styles.rightEdgeHandle]}
+              pointerEvents={props.fixedRatio ? "none" : "auto"}
+            >
               <Animated.View
                 style={[
                   styles.rightEdgeActivityIndicator,
