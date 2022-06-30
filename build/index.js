@@ -41,7 +41,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
     let initialCropBoxHeight = (_b = props.initialCropBoxHeight) !== null && _b !== void 0 ? _b : DEFAULT_CROP_SIZE * (props.imageHeight / DEFAULT_CROP_SIZE);
     /** Force the crop box to be a square if `circular` is set */
     if (props.circular) {
-        const largerSide = Math.max(initialCropBoxHeight, initialCropBoxHeight);
+        const largerSide = Math.max(initialCropBoxHeight, initialCropBoxWidth);
         initialCropBoxHeight = largerSide;
         initialCropBoxWidth = largerSide;
     }
@@ -124,7 +124,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         let width;
         let height;
         if (props.imageWidth < props.imageHeight) {
-            if (cropBoxRatio > 1) {
+            if (cropBoxRatio >= 1) {
                 width = initialCropBoxWidth;
                 height = (initialCropBoxHeight / imageRatio) * cropBoxRatio;
             }

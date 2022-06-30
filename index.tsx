@@ -77,7 +77,7 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
 
   /** Force the crop box to be a square if `circular` is set */
   if (props.circular) {
-    const largerSide = Math.max(initialCropBoxHeight, initialCropBoxHeight);
+    const largerSide = Math.max(initialCropBoxHeight, initialCropBoxWidth);
     initialCropBoxHeight = largerSide;
     initialCropBoxWidth = largerSide;
   }
@@ -186,7 +186,7 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
       let height;
 
       if (props.imageWidth < props.imageHeight) {
-        if (cropBoxRatio > 1) {
+        if (cropBoxRatio >= 1) {
           width = initialCropBoxWidth;
           height = (initialCropBoxHeight / imageRatio) * cropBoxRatio;
         } else {
