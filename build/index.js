@@ -523,7 +523,8 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
             maxValues[position] = maxValue;
             // If we have `fixedRatio` set and we are out of bounds, that means
             // we do not want to move at all, so we can just return the original position
-            if (props.fixedRatio && (value < minValue || value > maxValue)) {
+            if (props.fixedRatio ||
+                (props.circular && (value < minValue || value > maxValue))) {
                 return {
                     // @ts-ignore
                     top: animatedCropBoxPosition.current.top.__getValue(),
