@@ -544,7 +544,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
             }
             calculatedPosition[position] = value;
         }
-        if (preventResize) {
+        if (preventResize || props.circular) {
             const cropBoxWidth = imageWidthRef.current -
                 cropBoxPosition.current.left -
                 cropBoxPosition.current.right;

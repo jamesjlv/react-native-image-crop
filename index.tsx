@@ -691,7 +691,7 @@ const ImageCrop = forwardRef((props: IImageCropProps, ref) => {
       calculatedPosition[position] = value;
     }
 
-    if (preventResize) {
+    if (preventResize || props.circular) {
       const cropBoxWidth =
         imageWidthRef.current -
         cropBoxPosition.current.left -
