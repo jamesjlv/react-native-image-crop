@@ -443,16 +443,20 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
               if (ratioY < 1) ratioY = 1;
 
               let movementX =
-                position === "top-right" ? incrementDx * -1 : incrementDx;
+                position === "top-right" || position === "bottom-right"
+                  ? incrementDx * -1
+                  : incrementDx;
               let movementY =
-                position === "bottom-right" ? incrementDy * -1 : incrementDy;
+                position === "bottom-right" || position === "bottom-left"
+                  ? incrementDy * -1
+                  : incrementDy;
 
-              // get diagonal distance
+              // get diagonal distance and direction
+              const incrementDdirection = movementX + movementY > 0 ? 1 : 0;
               const incrementDd =
                 Math.floor(
                   Math.sqrt(Math.pow(incrementDx, 2) + Math.pow(incrementDy, 2))
                 ) / Math.sqrt(2);
-              const incrementDdirection = movementX + movementY > 0 ? 1 : 0;
 
               let multiplier = 1;
 
@@ -644,7 +648,6 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
             MINIMUM_IMAGE_SIZE;
         }
 
-        
         // Effect of offset
         if (position === "top") {
           minValue += imageOffsetY.current * scale.current;
@@ -659,10 +662,10 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
           minValue -= imageOffsetX.current * scale.current;
           maxValue -= imageOffsetX.current * scale.current;
         }
-        
+
         // When dragMode is set to IMAGE, don't allow the crop box to go out of bounds
-        if(props.dragMode === DragMode.IMAGE) minValue = 0;
-        
+        if (props.dragMode === DragMode.IMAGE) minValue = 0;
+
         // Effect of opposite edge
         let oppositePosition;
         let imageSize;
@@ -700,11 +703,11 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
         minValues[position] = minValue;
         maxValues[position] = maxValue;
 
-        // If we have `fixedRatio` set and we are out of bounds, that means
+        // If we have `fixedRatio` or `circular` set and we are out of bounds, that means
         // we do not want to move at all, so we can just return the original position
         if (
-          props.fixedRatio ||
-          (props.circular && (value < minValue || value > maxValue))
+          (props.fixedRatio || props.circular) &&
+          (value < minValue || value > maxValue)
         ) {
           return {
             // @ts-ignore
