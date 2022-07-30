@@ -31,6 +31,7 @@ var DragMode;
     DragMode["IMAGE"] = "image";
     DragMode["SELECTION"] = "selection";
 })(DragMode = exports.DragMode || (exports.DragMode = {}));
+const MIN_SCALE = 0.5;
 const DEFAULT_MAX_SCALE = 3;
 const DEFAULT_CROP_SIZE = 350;
 const MINIMUM_IMAGE_SIZE = 80;
@@ -230,8 +231,8 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                                 scale.current) /
                                 imageDiagonal.current) *
                                 2;
-                        if (newScale < 1) {
-                            newScale = 1;
+                        if (newScale < MIN_SCALE) {
+                            newScale = MIN_SCALE;
                         }
                         else if (newScale > maxScale) {
                             newScale = maxScale;
@@ -653,8 +654,8 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
     function onWheel(e) {
         const dy = e.deltaY / -1000;
         let newScale = scale.current + dy;
-        if (newScale < 1) {
-            newScale = 1;
+        if (newScale < MIN_SCALE) {
+            newScale = MIN_SCALE;
         }
         else if (newScale > maxScale) {
             newScale = maxScale;

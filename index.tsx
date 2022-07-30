@@ -79,6 +79,7 @@ export interface ImageCropResponse {
   };
 }
 
+const MIN_SCALE = 0.5;
 const DEFAULT_MAX_SCALE = 3;
 const DEFAULT_CROP_SIZE = 350;
 const MINIMUM_IMAGE_SIZE = 80;
@@ -336,8 +337,8 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
                   scale.current) /
                   imageDiagonal.current) *
                   2;
-              if (newScale < 1) {
-                newScale = 1;
+              if (newScale < MIN_SCALE) {
+                newScale = MIN_SCALE;
               } else if (newScale > maxScale) {
                 newScale = maxScale;
               }
@@ -856,8 +857,8 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
       const dy = e.deltaY / -1000;
 
       let newScale = scale.current + dy;
-      if (newScale < 1) {
-        newScale = 1;
+      if (newScale < MIN_SCALE) {
+        newScale = MIN_SCALE;
       } else if (newScale > maxScale) {
         newScale = maxScale;
       }
