@@ -53,6 +53,8 @@ interface IImageCropProps {
   fixedRatio?: boolean;
   /** Default is `DragMode.IMAGE` */
   dragMode?: DragMode;
+  /** Customize styling on the crop box/circle */
+  cropBoxStyle?: ViewStyle;
   zoomData?: {
     offsetX: number;
     offsetY: number;
@@ -949,6 +951,8 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
       bottom: animatedCropBoxPosition.current.bottom,
       right: animatedCropBoxPosition.current.right,
       left: animatedCropBoxPosition.current.left,
+      borderWidth: 2,
+      borderColor: "#rgba(255, 255, 255, 0.5)",
     };
 
     const ScrolWheelCaptureWrapper = (props: React.PropsWithChildren<any>) => {
@@ -1015,6 +1019,7 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
                   overflow: "hidden",
                   borderRadius: props.circular ? 1000 : 0,
                 },
+                props.cropBoxStyle,
               ]}
             >
               <Animated.Image

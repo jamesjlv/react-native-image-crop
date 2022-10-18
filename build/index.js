@@ -739,6 +739,8 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         bottom: animatedCropBoxPosition.current.bottom,
         right: animatedCropBoxPosition.current.right,
         left: animatedCropBoxPosition.current.left,
+        borderWidth: 2,
+        borderColor: "#rgba(255, 255, 255, 0.5)",
     };
     const ScrolWheelCaptureWrapper = (props) => {
         return react_native_1.Platform.OS === "web" ? (react_1.default.createElement("div", { onWheel: onWheel }, props.children)) : (react_1.default.createElement(react_1.default.Fragment, null, props.children));
@@ -781,6 +783,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                             overflow: "hidden",
                             borderRadius: props.circular ? 1000 : 0,
                         },
+                        props.cropBoxStyle,
                     ] },
                     react_1.default.createElement(react_native_1.Animated.Image, { style: [
                             {
