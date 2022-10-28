@@ -22,10 +22,15 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DragMode = void 0;
 const react_1 = __importStar(require("react"));
 const react_native_1 = require("react-native");
+const styles_1 = __importDefault(require("./styles"));
+const util_1 = require("./util");
 var DragMode;
 (function (DragMode) {
     DragMode["IMAGE"] = "image";
@@ -35,7 +40,6 @@ const MIN_SCALE = 0.5;
 const DEFAULT_MAX_SCALE = 3;
 const DEFAULT_CROP_SIZE = 350;
 const MINIMUM_IMAGE_SIZE = 80;
-const { width: DEVICE_WIDTH, height: DEVICE_HEIGHT } = react_native_1.Dimensions.get("screen");
 const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
     var _a, _b, _c;
     let initialCropBoxWidth = (_a = props.initialCropBoxWidth) !== null && _a !== void 0 ? _a : DEFAULT_CROP_SIZE * (props.imageWidth / DEFAULT_CROP_SIZE);
@@ -747,7 +751,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
     };
     return (react_1.default.createElement(ScrolWheelCaptureWrapper, null,
         react_1.default.createElement(react_native_1.Animated.View, Object.assign({ style: [
-                styles.container,
+                styles_1.default.container,
                 {
                     transform: [
                         {
@@ -759,9 +763,11 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                     ],
                 },
             ] }, imageDragAndPinchResponder.panHandlers),
+            (0, util_1.isPointerDevice)() && (react_1.default.createElement(react_native_1.View, { style: styles_1.default.instructionsContainer },
+                react_1.default.createElement(react_native_1.Text, { style: styles_1.default.instructionsText }, "Scroll to zoom, drag to move"))),
             react_1.default.createElement(react_native_1.Animated.View, { style: [
                     imageContainerStyle,
-                    styles.overflowImageContainer,
+                    styles_1.default.overflowImageContainer,
                     { opacity: animatedOverflowImageOpacity.current },
                 ] },
                 react_1.default.createElement(react_native_1.Image, { style: {
@@ -769,7 +775,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                         height: _imageHeight,
                     }, resizeMode: "contain", source: props.source })),
             react_1.default.createElement(react_native_1.View, { style: [
-                    styles.focusContainer,
+                    styles_1.default.focusContainer,
                     {
                         width: _imageWidth,
                         height: _imageHeight,
@@ -806,13 +812,13 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                             // console.log("IMAGE LOADED", event.nativeEvent.source);
                         } })),
                 react_1.default.createElement(react_native_1.Animated.View, { style: [
-                        styles.cropBox,
+                        styles_1.default.cropBox,
                         cropBoxStyle,
                         { display: props.circular ? "none" : "flex" },
                     ] },
-                    react_1.default.createElement(react_native_1.View, { style: [styles.topEdgeHandle], pointerEvents: props.fixedRatio ? "none" : "auto" },
+                    react_1.default.createElement(react_native_1.View, { style: [styles_1.default.topEdgeHandle], pointerEvents: props.fixedRatio ? "none" : "auto" },
                         react_1.default.createElement(react_native_1.Animated.View, { style: [
-                                styles.topEdgeActivityIndicator,
+                                styles_1.default.topEdgeActivityIndicator,
                                 {
                                     transform: [
                                         {
@@ -821,10 +827,10 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                                     ],
                                 },
                             ] }),
-                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.topEdgeOuterHandle }, getEdgeCropHandlePanResponder("top").panHandlers))),
-                    react_1.default.createElement(react_native_1.View, { style: [styles.bottomEdgeHandle], pointerEvents: props.fixedRatio ? "none" : "auto" },
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles_1.default.topEdgeOuterHandle }, getEdgeCropHandlePanResponder("top").panHandlers))),
+                    react_1.default.createElement(react_native_1.View, { style: [styles_1.default.bottomEdgeHandle], pointerEvents: props.fixedRatio ? "none" : "auto" },
                         react_1.default.createElement(react_native_1.Animated.View, { style: [
-                                styles.bottomEdgeActivityIndicator,
+                                styles_1.default.bottomEdgeActivityIndicator,
                                 {
                                     transform: [
                                         {
@@ -833,10 +839,10 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                                     ],
                                 },
                             ] }),
-                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.bottomEdgeOuterHandle }, getEdgeCropHandlePanResponder("bottom").panHandlers))),
-                    react_1.default.createElement(react_native_1.View, { style: [styles.leftEdgeHandle], pointerEvents: props.fixedRatio ? "none" : "auto" },
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles_1.default.bottomEdgeOuterHandle }, getEdgeCropHandlePanResponder("bottom").panHandlers))),
+                    react_1.default.createElement(react_native_1.View, { style: [styles_1.default.leftEdgeHandle], pointerEvents: props.fixedRatio ? "none" : "auto" },
                         react_1.default.createElement(react_native_1.Animated.View, { style: [
-                                styles.leftEdgeActivityIndicator,
+                                styles_1.default.leftEdgeActivityIndicator,
                                 {
                                     transform: [
                                         {
@@ -845,10 +851,10 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                                     ],
                                 },
                             ] }),
-                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.leftEdgeOuterHandle }, getEdgeCropHandlePanResponder("left").panHandlers))),
-                    react_1.default.createElement(react_native_1.View, { style: [styles.rightEdgeHandle], pointerEvents: props.fixedRatio ? "none" : "auto" },
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles_1.default.leftEdgeOuterHandle }, getEdgeCropHandlePanResponder("left").panHandlers))),
+                    react_1.default.createElement(react_native_1.View, { style: [styles_1.default.rightEdgeHandle], pointerEvents: props.fixedRatio ? "none" : "auto" },
                         react_1.default.createElement(react_native_1.Animated.View, { style: [
-                                styles.rightEdgeActivityIndicator,
+                                styles_1.default.rightEdgeActivityIndicator,
                                 {
                                     transform: [
                                         {
@@ -857,265 +863,16 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                                     ],
                                 },
                             ] }),
-                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.rightEdgeOuterHandle }, getEdgeCropHandlePanResponder("right").panHandlers))),
-                    react_1.default.createElement(react_native_1.View, { style: [styles.topLeftCornerHandle] },
-                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.topLeftCornerOuterHandle }, getCornerCropHandlePanResponder("top-left").panHandlers))),
-                    react_1.default.createElement(react_native_1.View, { style: [styles.topRightCornerHandle] },
-                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.topRightCornerOuterHandle }, getCornerCropHandlePanResponder("top-right").panHandlers))),
-                    react_1.default.createElement(react_native_1.View, { style: [styles.bottomLeftCornerHandle] },
-                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.bottomLeftCornerOuterHandle }, getCornerCropHandlePanResponder("bottom-left")
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles_1.default.rightEdgeOuterHandle }, getEdgeCropHandlePanResponder("right").panHandlers))),
+                    react_1.default.createElement(react_native_1.View, { style: [styles_1.default.topLeftCornerHandle] },
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles_1.default.topLeftCornerOuterHandle }, getCornerCropHandlePanResponder("top-left").panHandlers))),
+                    react_1.default.createElement(react_native_1.View, { style: [styles_1.default.topRightCornerHandle] },
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles_1.default.topRightCornerOuterHandle }, getCornerCropHandlePanResponder("top-right").panHandlers))),
+                    react_1.default.createElement(react_native_1.View, { style: [styles_1.default.bottomLeftCornerHandle] },
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles_1.default.bottomLeftCornerOuterHandle }, getCornerCropHandlePanResponder("bottom-left")
                             .panHandlers))),
-                    react_1.default.createElement(react_native_1.View, { style: [styles.bottomRightCornerHandle] },
-                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles.bottomRightCornerOuterHandle }, getCornerCropHandlePanResponder("bottom-right")
+                    react_1.default.createElement(react_native_1.View, { style: [styles_1.default.bottomRightCornerHandle] },
+                        react_1.default.createElement(react_native_1.View, Object.assign({ style: styles_1.default.bottomRightCornerOuterHandle }, getCornerCropHandlePanResponder("bottom-right")
                             .panHandlers))))))));
 });
 exports.default = ImageCrop;
-const styles = react_native_1.StyleSheet.create({
-    container: {
-        padding: 32,
-        cursor: "grab",
-        backgroundColor: "black",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    overflowImageContainer: {
-        zIndex: -1,
-        position: "absolute",
-        opacity: 0.4,
-    },
-    focusContainer: {},
-    cropBox: {
-        position: "absolute",
-    },
-    overlayTop: {
-        position: "absolute",
-        left: 0,
-        right: 0,
-        top: -DEVICE_HEIGHT,
-        height: DEVICE_HEIGHT,
-    },
-    overlayBottom: {
-        position: "absolute",
-        left: 0,
-        right: 0,
-        bottom: -DEVICE_HEIGHT,
-        height: DEVICE_HEIGHT,
-    },
-    overlayRight: {
-        position: "absolute",
-        right: -DEVICE_WIDTH,
-        top: -DEVICE_HEIGHT,
-        width: DEVICE_WIDTH,
-        bottom: -DEVICE_HEIGHT,
-    },
-    overlayLeft: {
-        position: "absolute",
-        width: DEVICE_WIDTH,
-        left: -DEVICE_WIDTH,
-        top: -DEVICE_HEIGHT,
-        bottom: -DEVICE_HEIGHT,
-    },
-    activeEdgeHandleTop: {
-        borderTopWidth: 3,
-    },
-    activeEdgeHandleBottom: {
-        borderBottomWidth: 3,
-    },
-    activeEdgeHandleRight: {
-        borderRightWidth: 3,
-    },
-    activeEdgeHandleLeft: {
-        borderLeftWidth: 3,
-    },
-    topEdgeHandle: {
-        cursor: "ns-resize",
-        position: "absolute",
-        left: 24,
-        right: 24,
-        height: 20,
-        borderTopColor: "#EEE",
-        borderTopWidth: 1,
-    },
-    bottomEdgeHandle: {
-        cursor: "ns-resize",
-        position: "absolute",
-        left: 24,
-        right: 24,
-        bottom: 0,
-        height: 20,
-        borderColor: "#EEE",
-        borderBottomWidth: 1,
-    },
-    rightEdgeHandle: {
-        cursor: "ew-resize",
-        position: "absolute",
-        top: 24,
-        bottom: 24,
-        right: 0,
-        width: 20,
-        borderColor: "#EEE",
-        borderRightWidth: 1,
-    },
-    leftEdgeHandle: {
-        cursor: "ew-resize",
-        position: "absolute",
-        top: 24,
-        bottom: 24,
-        left: 0,
-        width: 20,
-        borderColor: "#EEE",
-        borderLeftWidth: 1,
-    },
-    topEdgeActivityIndicator: {
-        position: "absolute",
-        top: -2,
-        height: 5,
-        left: 0,
-        right: 0,
-        backgroundColor: "#FFF",
-    },
-    bottomEdgeActivityIndicator: {
-        position: "absolute",
-        bottom: -2,
-        height: 5,
-        left: 0,
-        right: 0,
-        backgroundColor: "#FFF",
-    },
-    leftEdgeActivityIndicator: {
-        position: "absolute",
-        left: -2,
-        width: 5,
-        top: 0,
-        bottom: 0,
-        backgroundColor: "#FFF",
-    },
-    rightEdgeActivityIndicator: {
-        position: "absolute",
-        right: -2,
-        width: 5,
-        top: 0,
-        bottom: 0,
-        backgroundColor: "#FFF",
-    },
-    topLeftCornerHandle: {
-        zIndex: 10,
-        opacity: 0.7,
-        cursor: "nwse-resize",
-        position: "absolute",
-        left: 0,
-        top: 0,
-        width: 24,
-        height: 24,
-        borderLeftWidth: 3,
-        borderTopWidth: 3,
-        borderColor: "#fff",
-    },
-    topRightCornerHandle: {
-        zIndex: 10,
-        cursor: "nesw-resize",
-        opacity: 0.7,
-        position: "absolute",
-        top: 0,
-        right: 0,
-        width: 24,
-        height: 24,
-        borderRightWidth: 3,
-        borderTopWidth: 3,
-        borderColor: "#fff",
-    },
-    bottomLeftCornerHandle: {
-        zIndex: 10,
-        cursor: "nesw-resize",
-        opacity: 0.7,
-        position: "absolute",
-        left: 0,
-        bottom: 0,
-        width: 24,
-        height: 24,
-        borderLeftWidth: 3,
-        borderBottomWidth: 3,
-        borderColor: "#fff",
-    },
-    bottomRightCornerHandle: {
-        zIndex: 10,
-        cursor: "nwse-resize",
-        opacity: 0.7,
-        position: "absolute",
-        right: 0,
-        bottom: 0,
-        width: 24,
-        height: 24,
-        borderRightWidth: 3,
-        borderBottomWidth: 3,
-        borderColor: "#fff",
-    },
-    topLeftCornerOuterHandle: {
-        zIndex: 10,
-        cursor: "nwse-resize",
-        position: "absolute",
-        left: -24,
-        top: -24,
-        width: 48,
-        height: 48,
-    },
-    topRightCornerOuterHandle: {
-        zIndex: 10,
-        cursor: "nesw-resize",
-        position: "absolute",
-        top: -24,
-        right: -24,
-        width: 48,
-        height: 48,
-    },
-    bottomLeftCornerOuterHandle: {
-        zIndex: 10,
-        cursor: "nesw-resize",
-        position: "absolute",
-        left: -24,
-        bottom: -24,
-        width: 48,
-        height: 48,
-    },
-    bottomRightCornerOuterHandle: {
-        zIndex: 10,
-        cursor: "nwse-resize",
-        position: "absolute",
-        right: -24,
-        bottom: -24,
-        width: 48,
-        height: 48,
-    },
-    topEdgeOuterHandle: {
-        height: 40,
-        top: -20,
-        left: 0,
-        right: 0,
-        position: "absolute",
-        cursor: "ns-resize",
-    },
-    bottomEdgeOuterHandle: {
-        height: 40,
-        position: "absolute",
-        bottom: -20,
-        left: 0,
-        right: 0,
-        cursor: "ns-resize",
-    },
-    leftEdgeOuterHandle: {
-        width: 40,
-        position: "absolute",
-        top: 0,
-        bottom: 0,
-        left: -20,
-        cursor: "ew-resize",
-    },
-    rightEdgeOuterHandle: {
-        width: 40,
-        position: "absolute",
-        top: 0,
-        bottom: 0,
-        right: -20,
-        cursor: "ew-resize",
-    },
-});

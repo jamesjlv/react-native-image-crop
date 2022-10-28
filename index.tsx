@@ -16,9 +16,12 @@ import {
   PanResponderInstance,
   Platform,
   StyleSheet,
+  Text,
   View,
   ViewStyle,
 } from "react-native";
+import styles from "./styles";
+import { isPointerDevice } from "./util";
 
 type CropHandleCornerPosition =
   | "top-left"
@@ -85,8 +88,6 @@ const MIN_SCALE = 0.5;
 const DEFAULT_MAX_SCALE = 3;
 const DEFAULT_CROP_SIZE = 350;
 const MINIMUM_IMAGE_SIZE = 80;
-
-const { width: DEVICE_WIDTH, height: DEVICE_HEIGHT } = Dimensions.get("screen");
 
 const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
   (props: IImageCropProps, ref) => {
@@ -981,6 +982,15 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
           ]}
           {...imageDragAndPinchResponder.panHandlers}
         >
+          {/* INSTRUCTIONS FOR WEB */}
+          {isPointerDevice() && (
+            <View style={styles.instructionsContainer}>
+              <Text style={styles.instructionsText}>
+                Scroll to zoom, drag to move
+              </Text>
+            </View>
+          )}
+
           {/* OVERFLOW IMAGE */}
           <Animated.View
             style={[
@@ -1192,253 +1202,3 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
 );
 
 export default ImageCrop;
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 32,
-    cursor: "grab",
-    backgroundColor: "black",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  overflowImageContainer: {
-    zIndex: -1,
-    position: "absolute",
-    opacity: 0.4,
-  },
-  focusContainer: {},
-  cropBox: {
-    position: "absolute",
-  },
-  overlayTop: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: -DEVICE_HEIGHT,
-    height: DEVICE_HEIGHT,
-  },
-  overlayBottom: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: -DEVICE_HEIGHT,
-    height: DEVICE_HEIGHT,
-  },
-  overlayRight: {
-    position: "absolute",
-    right: -DEVICE_WIDTH,
-    top: -DEVICE_HEIGHT,
-    width: DEVICE_WIDTH,
-    bottom: -DEVICE_HEIGHT,
-  },
-  overlayLeft: {
-    position: "absolute",
-    width: DEVICE_WIDTH,
-    left: -DEVICE_WIDTH,
-    top: -DEVICE_HEIGHT,
-    bottom: -DEVICE_HEIGHT,
-  },
-  activeEdgeHandleTop: {
-    borderTopWidth: 3,
-  },
-  activeEdgeHandleBottom: {
-    borderBottomWidth: 3,
-  },
-  activeEdgeHandleRight: {
-    borderRightWidth: 3,
-  },
-  activeEdgeHandleLeft: {
-    borderLeftWidth: 3,
-  },
-  topEdgeHandle: {
-    cursor: "ns-resize",
-    position: "absolute",
-    left: 24,
-    right: 24,
-    height: 20,
-    borderTopColor: "#EEE",
-    borderTopWidth: 1,
-  },
-  bottomEdgeHandle: {
-    cursor: "ns-resize",
-    position: "absolute",
-    left: 24,
-    right: 24,
-    bottom: 0,
-    height: 20,
-    borderColor: "#EEE",
-    borderBottomWidth: 1,
-  },
-  rightEdgeHandle: {
-    cursor: "ew-resize",
-    position: "absolute",
-    top: 24,
-    bottom: 24,
-    right: 0,
-    width: 20,
-    borderColor: "#EEE",
-    borderRightWidth: 1,
-  },
-  leftEdgeHandle: {
-    cursor: "ew-resize",
-    position: "absolute",
-    top: 24,
-    bottom: 24,
-    left: 0,
-    width: 20,
-    borderColor: "#EEE",
-    borderLeftWidth: 1,
-  },
-  topEdgeActivityIndicator: {
-    position: "absolute",
-    top: -2,
-    height: 5,
-    left: 0,
-    right: 0,
-    backgroundColor: "#FFF",
-  },
-  bottomEdgeActivityIndicator: {
-    position: "absolute",
-    bottom: -2,
-    height: 5,
-    left: 0,
-    right: 0,
-    backgroundColor: "#FFF",
-  },
-  leftEdgeActivityIndicator: {
-    position: "absolute",
-    left: -2,
-    width: 5,
-    top: 0,
-    bottom: 0,
-    backgroundColor: "#FFF",
-  },
-  rightEdgeActivityIndicator: {
-    position: "absolute",
-    right: -2,
-    width: 5,
-    top: 0,
-    bottom: 0,
-    backgroundColor: "#FFF",
-  },
-  topLeftCornerHandle: {
-    zIndex: 10,
-    opacity: 0.7,
-    cursor: "nwse-resize",
-    position: "absolute",
-    left: 0,
-    top: 0,
-    width: 24,
-    height: 24,
-    borderLeftWidth: 3,
-    borderTopWidth: 3,
-    borderColor: "#fff",
-  },
-  topRightCornerHandle: {
-    zIndex: 10,
-    cursor: "nesw-resize",
-    opacity: 0.7,
-    position: "absolute",
-    top: 0,
-    right: 0,
-    width: 24,
-    height: 24,
-    borderRightWidth: 3,
-    borderTopWidth: 3,
-    borderColor: "#fff",
-  },
-  bottomLeftCornerHandle: {
-    zIndex: 10,
-    cursor: "nesw-resize",
-    opacity: 0.7,
-    position: "absolute",
-    left: 0,
-    bottom: 0,
-    width: 24,
-    height: 24,
-    borderLeftWidth: 3,
-    borderBottomWidth: 3,
-    borderColor: "#fff",
-  },
-  bottomRightCornerHandle: {
-    zIndex: 10,
-    cursor: "nwse-resize",
-    opacity: 0.7,
-    position: "absolute",
-    right: 0,
-    bottom: 0,
-    width: 24,
-    height: 24,
-    borderRightWidth: 3,
-    borderBottomWidth: 3,
-    borderColor: "#fff",
-  },
-  topLeftCornerOuterHandle: {
-    zIndex: 10,
-    cursor: "nwse-resize",
-    position: "absolute",
-    left: -24,
-    top: -24,
-    width: 48,
-    height: 48,
-  },
-  topRightCornerOuterHandle: {
-    zIndex: 10,
-    cursor: "nesw-resize",
-    position: "absolute",
-    top: -24,
-    right: -24,
-    width: 48,
-    height: 48,
-  },
-  bottomLeftCornerOuterHandle: {
-    zIndex: 10,
-    cursor: "nesw-resize",
-    position: "absolute",
-    left: -24,
-    bottom: -24,
-    width: 48,
-    height: 48,
-  },
-  bottomRightCornerOuterHandle: {
-    zIndex: 10,
-    cursor: "nwse-resize",
-    position: "absolute",
-    right: -24,
-    bottom: -24,
-    width: 48,
-    height: 48,
-  },
-  topEdgeOuterHandle: {
-    height: 40,
-    top: -20,
-    left: 0,
-    right: 0,
-    position: "absolute",
-    cursor: "ns-resize",
-  },
-  bottomEdgeOuterHandle: {
-    height: 40,
-    position: "absolute",
-    bottom: -20,
-    left: 0,
-    right: 0,
-    cursor: "ns-resize",
-  },
-  leftEdgeOuterHandle: {
-    width: 40,
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    left: -20,
-    cursor: "ew-resize",
-  },
-  rightEdgeOuterHandle: {
-    width: 40,
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    right: -20,
-    cursor: "ew-resize",
-  },
-});
