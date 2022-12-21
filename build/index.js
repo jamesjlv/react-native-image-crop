@@ -743,7 +743,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         bottom: animatedCropBoxPosition.current.bottom,
         right: animatedCropBoxPosition.current.right,
         left: animatedCropBoxPosition.current.left,
-        borderWidth: 2,
+        // borderWidth: 2,
         borderColor: "#rgba(255, 255, 255, 0.5)",
     };
     const ScrolWheelCaptureWrapper = (props) => {
