@@ -36,7 +36,7 @@ var DragMode;
     DragMode["IMAGE"] = "image";
     DragMode["SELECTION"] = "selection";
 })(DragMode = exports.DragMode || (exports.DragMode = {}));
-const MIN_SCALE = 0.5;
+const MIN_SCALE = 1;
 const DEFAULT_MAX_SCALE = 3;
 const DEFAULT_CROP_SIZE = 350;
 const MINIMUM_IMAGE_SIZE = 80;
@@ -153,6 +153,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         // } else {
         //   width = cropBoxRatio * width;
         // }
+
         setImageWidth(width);
         setImageHeight(height);
         // Immediate update refs because they will be used by resizeCropBox() before useEffect can update them
@@ -177,7 +178,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
     ]);
     const imageDragAndPinchResponder = (0, react_1.useMemo)(() => {
         return react_native_1.PanResponder.create({
-            onStartShouldSetPanResponder: () => {
+            onStartShouldSetPanResponder: (data, state) => {
                 return !isCropBoxMoving.current;
             },
             onPanResponderGrant: () => {
@@ -186,6 +187,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                 lastGestureDy.current = 0;
             },
             onPanResponderMove: (event, gestureState) => {
+
                 const { changedTouches } = event.nativeEvent;
                 if (changedTouches.length <= 1) {
                     // Handle drag
@@ -225,7 +227,10 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                     }
                 }
                 else {
-                    // Handle zoom
+
+                  if(Number(animatedScale.current.__getValue()) < 1) return;
+
+
                     const widthDistance = changedTouches[1].pageX - changedTouches[0].pageX;
                     const heightDistance = changedTouches[1].pageY - changedTouches[0].pageY;
                     zoomDistance.current = Math.floor(Math.sqrt(widthDistance * widthDistance + heightDistance * heightDistance));
@@ -266,6 +271,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         if (!panResponders.current[position])
             panResponders.current[position] = react_native_1.PanResponder.create({
                 onStartShouldSetPanResponder: () => {
+
                     // If fixedRatio is enabled, do not respond to edge movement
                     return (!isCropBoxMoving.current && !props.circular && !props.fixedRatio);
                 },
@@ -275,6 +281,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                     animateActiveEdgeStart(position);
                 },
                 onPanResponderMove: (event, gestureState) => {
+
                     let shouldInvert = position === "right" || position === "bottom";
                     let offset = position === "left" || position === "right"
                         ? gestureState.dx
@@ -290,6 +297,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                     resizeCropBox();
                 },
                 onPanResponderEnd: () => {
+
                     recenterCropBox();
                     animateActiveEdgeEnd(position);
                 },
@@ -304,6 +312,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         if (!panResponders.current[position])
             panResponders.current[position] = react_native_1.PanResponder.create({
                 onStartShouldSetPanResponder: () => {
+
                     return !isCropBoxMoving.current;
                 },
                 onPanResponderGrant: () => {
@@ -311,6 +320,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                     lastGestureDy.current = 0;
                 },
                 onPanResponderMove: (event, gestureState) => {
+
                     let incrementDx = lastGestureDx.current
                         ? gestureState.dx - lastGestureDx.current
                         : 0;
@@ -350,6 +360,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                         cropBoxPosition.current.left += incrementDx;
                     }
                     if (position === "top-right" || position === "bottom-right") {
+
                         cropBoxPosition.current.right -= incrementDx;
                     }
                     if (position === "bottom-left" || position === "bottom-right") {
@@ -391,6 +402,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         //   // Scale to match original width
         // } else {
         // }
+
         cropBoxPosition.current = centeredPosition;
         animatedCropBoxPosition.current.bottom.setValue(centeredPosition.bottom);
         animatedCropBoxPosition.current.top.setValue(centeredPosition.top);
@@ -406,7 +418,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
             x: -changeAmount.left,
             y: -changeAmount.top,
         });
-        // translateImage();
+        translateImage();
         resizeCropBox();
         react_native_1.Animated.timing(viewportOffset.current, {
             toValue: { x: 0, y: 0 },
@@ -422,6 +434,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         const minOffsetX = -(imageWidthRef.current - getCropBoxWidth() / scale.current) / 2;
         const maxOffsetY = (imageHeightRef.current - getCropBoxHeight() / scale.current) / 2;
         const minOffsetY = -(imageHeightRef.current - getCropBoxHeight() / scale.current) / 2;
+
         if (imageOffsetX.current > maxOffsetX) {
             imageOffsetX.current = maxOffsetX;
         }
@@ -543,8 +556,11 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
             maxValues[position] = maxValue;
             // If we have `fixedRatio` or `circular` set and we are out of bounds, that means
             // we do not want to move at all, so we can just return the original position
+
+
             if ((props.fixedRatio || props.circular) &&
                 (value < minValue || value > maxValue)) {
+
                 return {
                     // @ts-ignore
                     top: animatedCropBoxPosition.current.top.__getValue(),
@@ -566,6 +582,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
             calculatedPosition[position] = value;
         }
         if (preventResize || props.circular) {
+
             const cropBoxWidth = imageWidthRef.current -
                 cropBoxPosition.current.left -
                 cropBoxPosition.current.right;
@@ -608,6 +625,8 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                 }
             }
         }
+
+
         return Object.assign(calculatedPosition, overridePosition);
     }
     function resizeCropBox() {
@@ -618,6 +637,11 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
             animatedCropBoxPosition.current[position].setValue(newPosition[position]);
         }
         // Update offset value
+      //   console.log({
+      //     x: -cropBoxPosition.current.left / scale.current,
+      //     y: -cropBoxPosition.current.top / scale.current,
+      // })
+
         cropBoxImageOffset.current.setValue({
             x: -cropBoxPosition.current.left / scale.current,
             y: -cropBoxPosition.current.top / scale.current,
@@ -656,6 +680,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         };
     }, [_imageWidth, _imageHeight]);
     function onWheel(e) {
+
         const dy = e.deltaY / -1000;
         let newScale = scale.current + dy;
         if (newScale < MIN_SCALE) {
