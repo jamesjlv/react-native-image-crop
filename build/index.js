@@ -91,7 +91,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
             cropBoxPosition.current.top -
             cropBoxPosition.current.bottom);
     }
-    const scale = (0, react_1.useRef)(1);
+    const scale = (0, react_1.useRef)(1.5);
     const animatedScale = (0, react_1.useRef)(new react_native_1.Animated.Value(scale.current));
     /** Gesture context */
     const lastZoomDistance = (0, react_1.useRef)();
