@@ -51,6 +51,16 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         initialCropBoxWidth = largerSide;
     }
     const maxScale = (_c = props.maxScale) !== null && _c !== void 0 ? _c : DEFAULT_MAX_SCALE;
+    const screenWidth = react_native_1.Dimensions.get('screen').width
+    const screenHeight = react_native_1.Dimensions.get('screen').height
+
+    const centeredPositionScreen = {
+      left: (screenWidth - props.initialCropBoxWidth) / 2,
+      right: (screenWidth - props.initialCropBoxWidth) / 2,
+      top: (screenHeight - props.initialCropBoxHeight) / 2,
+      bottom: (screenHeight - props.initialCropBoxHeight) / 2,
+  };
+
     /** Rendered width & height of image (at scale of 1) */
     const [_imageWidth, setImageWidth] = (0, react_1.useState)(0);
     const [_imageHeight, setImageHeight] = (0, react_1.useState)(0);
@@ -166,6 +176,8 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         cropBoxPosition.current.bottom = offsetY / 2;
         cropBoxPosition.current.right = offsetX / 2;
         cropBoxPosition.current.left = offsetX / 2;
+        translateImage();
+
         resizeCropBox();
         // Get diagonal size
         imageDiagonal.current = Math.floor(Math.sqrt(Math.pow(imageWidthRef.current, 2) +
@@ -385,12 +397,16 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         isCropBoxMoving.current = true;
         const cropBoxWidth = getCropBoxWidth();
         const cropBoxHeight = getCropBoxHeight();
+
+
+
         const centeredPosition = {
             left: (imageWidthRef.current - cropBoxWidth) / 2,
             right: (imageWidthRef.current - cropBoxWidth) / 2,
             top: (imageHeightRef.current - cropBoxHeight) / 2,
             bottom: (imageHeightRef.current - cropBoxHeight) / 2,
         };
+
         const changeAmount = {
             left: centeredPosition.left - cropBoxPosition.current.left,
             right: centeredPosition.right - cropBoxPosition.current.right,
@@ -504,6 +520,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                             2 -
                         MINIMUM_IMAGE_SIZE;
             }
+
             // Effect of offset
             if (position === "top") {
                 minValue += imageOffsetY.current * scale.current;
@@ -631,6 +648,9 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
     }
     function resizeCropBox() {
         const newPosition = calculateCropBoxPosition();
+
+        if(newPosition.left!==0 || newPosition.right!==0) return;
+
         for (let position of Object.keys(newPosition)) {
             cropBoxPosition.current[position] = newPosition[position];
             // Update position values
@@ -715,6 +735,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                 break;
             }
         }
+
         react_native_1.Animated.timing(animatedValue.current, {
             toValue: 1,
             useNativeDriver: true,
@@ -742,6 +763,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                 break;
             }
         }
+
         react_native_1.Animated.timing(animatedValue.current, {
             toValue: 0,
             useNativeDriver: true,
@@ -764,7 +786,7 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
         ],
     };
     const cropBoxStyle = {
-        top: animatedCropBoxPosition.current.top,
+        top: 0,
         bottom: animatedCropBoxPosition.current.bottom,
         right: animatedCropBoxPosition.current.right,
         left: animatedCropBoxPosition.current.left,
@@ -802,8 +824,8 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
             react_1.default.createElement(react_native_1.View, { style: [
                     styles_1.default.focusContainer,
                     {
-                        width: _imageWidth,
-                        height: _imageHeight,
+                        width: props.initialCropBoxWidth,
+                        height: props.initialCropBoxHeight,
                     },
                 ] },
                 react_1.default.createElement(react_native_1.Animated.View, { style: [
@@ -812,6 +834,9 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                             display: "flex",
                             position: "absolute",
                             overflow: "hidden",
+                            width: props.initialCropBoxWidth,
+                            height: props.initialCropBoxHeight,
+                            // flex: 1,
                             borderRadius: props.circular ? 1000 : 0,
                         },
                         props.cropBoxStyle,
@@ -832,7 +857,9 @@ const ImageCrop = (0, react_1.forwardRef)((props, ref) => {
                                 position: "absolute",
                                 width: _imageWidth,
                                 height: _imageHeight,
+                                alignSelf: 'center',
                             },
+
                         ], resizeMode: "contain", source: props.source, onLoad: (event) => {
                             // console.log("IMAGE LOADED", event.nativeEvent.source);
                         } })),
