@@ -114,6 +114,7 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
     const imageHeightRef = useRef(_imageHeight);
     const imageDiagonal = useRef<number>(0);
 
+
     // For for animating automated cropbox re-centers
     const viewportOffset = useRef(new Animated.ValueXY({ x: 0, y: 0 }));
 
@@ -512,6 +513,8 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
       const cropBoxWidth = getCropBoxWidth();
       const cropBoxHeight = getCropBoxHeight();
 
+
+
       const centeredPosition = {
         left: (imageWidthRef.current - cropBoxWidth) / 2,
         right: (imageWidthRef.current - cropBoxWidth) / 2,
@@ -553,7 +556,7 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
         y: -changeAmount.top,
       });
 
-      // translateImage();
+      translateImage();
       resizeCropBox();
 
       Animated.timing(viewportOffset.current, {
@@ -948,11 +951,11 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
     };
 
     const cropBoxStyle = {
-      top: animatedCropBoxPosition.current.top,
+      top: 0,
       bottom: animatedCropBoxPosition.current.bottom,
       right: animatedCropBoxPosition.current.right,
       left: animatedCropBoxPosition.current.left,
-      borderWidth: 2,
+      // borderWidth: 2,
       borderColor: "#rgba(255, 255, 255, 0.5)",
     };
 
@@ -1016,6 +1019,7 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
               {
                 width: _imageWidth,
                 height: _imageHeight,
+
               },
             ]}
           >
@@ -1028,6 +1032,7 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
                   position: "absolute",
                   overflow: "hidden",
                   borderRadius: props.circular ? 1000 : 0,
+
                 },
                 props.cropBoxStyle,
               ]}
@@ -1070,7 +1075,8 @@ const ImageCrop = forwardRef<ImageCropRef, IImageCropProps>(
               style={[
                 styles.cropBox,
                 cropBoxStyle,
-                { display: props.circular ? "none" : "flex" },
+                { display: props.circular ? "none" : "flex"},
+
               ]}
             >
               {/* EDGE HANDLES */}
