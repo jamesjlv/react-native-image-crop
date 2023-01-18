@@ -6,9 +6,10 @@ exports.default = react_native_1.StyleSheet.create({
     container: {
         padding: 32,
         // cursor: "grab",
-        backgroundColor: "black",
+        // backgroundColor: "red",
         justifyContent: "center",
         alignItems: "center",
+        height: '100%'
     },
     overflowImageContainer: {
         zIndex: -1,
